@@ -8,41 +8,11 @@ var points; //for 3d spectrum and button
 var bassPoints = 3;
 var midPoints = 3; 
 var treblePoints = 12;
+var top_zero = false; 
 
 function setup() {
   cnv = createCanvas(windowWidth/1.2, windowHeight/2);
-  cnv.position((windowWidth/6)+4.5,windowHeight/2); 
-  noFill();
-
-  selection = createSelect(); 
-  selection.position(10,10); 
-  selection.option("Full View");
-  selection.option("Top View"); 
-  selection.option("Bottom View"); 
-  selection.option("Empty View"); 
-  selection.changed(mySelectEvent); 
-
-  bassinput = createInput(); 
-  bassinput.position(10, 35); 
-  bassbutton = createButton("Bass Range");  
-  bassbutton.position(bassinput.x+bassinput.width, 35); 
-  bassbutton.mousePressed(changeBass); 
-
-  midinput = createInput(); 
-  midinput.position(10, 55); 
-  midbutton = createButton("Mid Range"); 
-  midbutton.position(midinput.x+midinput.width,55); 
-  midbutton.mousePressed(changeMid); 
-
-  trebleinput = createInput(); 
-  trebleinput.position(10, 75); 
-  treblebutton = createButton("Treble Range"); 
-  treblebutton.position(trebleinput.x+trebleinput.width, 75); 
-  treblebutton.mousePressed(changeTreble); 
-
-  button = createButton("Change All"); 
-  button.position(10, 100); 
-  button.mousePressed(changingPoints); 
+  cnv.position((windowWidth/6)+10,windowHeight/2); 
 
   mic = new p5.AudioIn();
   mic.start();
@@ -51,38 +21,20 @@ function setup() {
   fft.setInput(mic);
 }
 
-function changeBass() { 
-  bassPoints = bassinput.value(); 
-}
-
-function changeMid() { 
-  midPoints = midinput.value(); 
-}
-
-function changeTreble() { 
-  treblePoints = trebleinput.value(); 
-}
-
-function changingPoints() {
-  treblePoints = trebleinput.value();
-  bassPoints = bassinput.value();
-  midPoints = midinput.value();
-}
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 
 function draw() {
+  noFill();
+
   var h = (height/divisions);
   var spectrum = fft.analyze();
   var newBuffer = [];
-  stroke(255,119,0,100);
+  stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),100);
 
   var scaledSpectrum = splitOctaves(spectrum, 12);
   var len = scaledSpectrum.length;
 
-  background(255,255,255,1);
+  background(r_slide.value(),g_slide.value(),b_slide.value(),1);
   // copy before clearing the background
   copy(cnv,0,0,width,height,0,speed,width,height);
 
@@ -109,33 +61,33 @@ function splitOctaves(spectrum, slicesPerOctave) {
   var scaledSpectrum = [];
   var len = spectrum.length;
 
-  //opacity
-  if (fft.getEnergy("treble") == true) {
-      if (treblePoints == null) {
-        points = slicesPerOctave || 12;
-      }
-      else {
-        points = treblePoints;
-      }
-    }
-    else if (fft.getEnergy("bass") == true) { 
-      if (bassPoints == null) {
-        points = slicesPerOctave || 3;
-      }
-      else {
-        points = bassPoints;
-      }
-    }
-    else { 
-      if (midPoints == null) {
-        points = slicesPerOctave || 3;
-      }
-      else {
-        points = midPoints;
-      }
+  if (top_zero == false) {
+    if (fft.getEnergy("treble") == true) {
+      points = trebleslider.value();
     }
 
-  //print("array", treblePoints, bassPoints, midPoints); 
+  else if (fft.getEnergy("bass") == true) {
+      points = bassslider.value();
+    }
+
+  else {
+      if (fft.getEnergy("lowMid") == true) {
+        points = bassslider.value(); 
+      }
+      else if (fft.getEnergy("highMid") == true) {
+        points = trebleslider.value(); 
+      }
+      else {
+        points = midslider.value();
+      }  
+    }
+  } 
+  else{
+    points = 0; 
+  }
+
+
+  //print("array", trebleslider.value(), bassslider.value(), midslider.value()); 
   //print(points);
   
   var nthRootOfTwo = Math.pow(2, 1/points);
@@ -209,6 +161,102 @@ function smoothPoint(spectrum, index, numberOfNeighbors) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+var side_bar = function(p) { 
+  var side_cnv; 
+
+  p.setup = function() {
+    side_cnv = p.createCanvas(windowWidth/6, windowHeight); 
+    side_cnv.position(0,0);
+    p.background(49,51,53, 100);
+    p.noLoop();
+
+    selection = createSelect(); 
+    selection.position(10,95); 
+    selection.option("Full View");
+    selection.option("Top View"); 
+    selection.option("Bottom View"); 
+    selection.option("Empty View"); 
+    selection.changed(mySelectEvent);  
+
+    bassslider = createSlider(0,15,3); 
+    bassslider.position(10, 200); 
+
+    midslider = createSlider(0,15,3); 
+    midslider.position(10, 220); 
+
+    trebleslider = createSlider(0,15,12); 
+    trebleslider.position(10, 240); 
+
+    r_slide = createSlider(0, 255, 255); 
+    r_slide.position(10, 340); 
+
+    g_slide = createSlider(0,255, 255); 
+    g_slide.position(10, 360); 
+
+    b_slide = createSlider(0,255,255); 
+    b_slide.position(10, 380); 
+
+    //////////////
+
+    rline_slide = createSlider(0, 255, 255); 
+    rline_slide.position(10, 430); 
+
+    gline_slide = createSlider(0,255, 119); 
+    gline_slide.position(10, 450); 
+
+    bline_slide = createSlider(0,255,0); 
+    bline_slide.position(10, 470); 
+  }
+
+  p.draw = function() {
+    p.fill(255,255,255); 
+    p.textFont('Baskerville'); 
+
+    //Headers
+    p.textSize(36); 
+    p.text('AudioWorks', 10,35);
+
+    //Sub Headers
+    p.textSize(24); 
+    p.text("View Adjuster", 10, 70); 
+    p.text("Frequency Adjuster", 10, 155); 
+    p.text("Color Adjuster", 10, 300); 
+
+    //General Text Size 
+    p.textSize(14);
+
+    //View Blurb
+    p.text("Change which waveform runs below", 10, 87); 
+
+    //Frequency Blurb
+    p.text("Slide through values 0 to 15 to change", 10,175)
+    p.text("input sensitivity for each frequency range!", 10, 190)
+    
+    //frequency slider descriptions
+    p.text("Bass input", 150, 212); 
+    p.text("Mid input", 150, 232);  
+    p.text("Treble input", 150, 252);
+
+    //colour picker description
+    p.text("Change the line and background color", 10, 320); 
+
+    //colour slider descriptions
+    p.text("Background Color", 10, 340); 
+    p.text("Red", 150, 354); 
+    p.text("Green", 150, 374); 
+    p.text("Blue", 150, 394); 
+
+    p.text("Line Color", 10, 420); 
+    p.text("Red", 150, 444); 
+    p.text("Green", 150, 464); 
+    p.text("Blue", 150, 484); 
+
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 var o_sketch = function(p) { 
   p.x = 100; 
   p.y = 100;  
@@ -216,10 +264,11 @@ var o_sketch = function(p) {
   p.fft; 
   p.trigger;
   p.working = true; 
+  var o_cnv; 
 
   p.setup = function() {
-    p.createCanvas(windowWidth/1.2, windowHeight/2);
-    p.background(255,255,255);
+    o_cnv = p.createCanvas(windowWidth/1.2, windowHeight/2);
+    o_cnv.position(250,0); 
     
     p.mic = new p5.AudioIn();
     p.fft = new p5.FFT(0.8, 2048);
@@ -229,10 +278,12 @@ var o_sketch = function(p) {
 
   }
   p.draw = function() {
+
+    p.text("Bass input",0,0);
     p.strokeWeight(2);
     p.noFill();
-    p.stroke(255,119,0);
-    p.background(255,255,255);
+    p.stroke(rline_slide.value(),gline_slide.value(),bline_slide.value());
+    p.background(r_slide.value(),g_slide.value(),b_slide.value());
     p.waveform = p.fft.waveform(); 
     p.beginShape();
     p.trigger = 0;
@@ -256,7 +307,7 @@ var o_sketch = function(p) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
+var side_bar = new p5(side_bar); 
 var space = new p5(); 
 var o_p5 = new p5(o_sketch);
 
@@ -264,12 +315,14 @@ var o_p5 = new p5(o_sketch);
 function mySelectEvent() {
   var view = selection.value(); 
   if (view == "Full View") {
+    top_zero = false; 
     mic.start(); 
     fft.setInput(mic); 
     o_p5.mic.start(); 
     o_p5.fft.setInput(o_p5.mic); 
   }
   else if (view == "Bottom View") {
+    top_zero = false; 
     mic.start(); 
     fft.setInput(mic); 
     o_p5.mic.stop(); 
@@ -277,8 +330,7 @@ function mySelectEvent() {
 
   }
   else if (view == "Top View") {
-    mic.stop(); 
-    fft.setInput(mic);
+    top_zero = true; 
     o_p5.mic.start(); 
     o_p5.fft.setInput(o_p5.mic); 
 
@@ -293,9 +345,10 @@ function mySelectEvent() {
 
 function windowResized() {
   resizeCanvas(windowWidth/1.2, windowHeight/2);
-  cnv.position((windowWidth/6)+4.5,windowHeight/2); 
+  cnv.position(250, windowHeight/2); 
   o_p5.resizeCanvas(windowWidth/1.2, windowHeight/2);
   background(255,255,255,1); 
   o_p5.background(0,0,0);
+  o_cnv.position(250, windowHeight/2); 
 }
 
