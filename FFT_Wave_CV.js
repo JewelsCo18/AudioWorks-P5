@@ -1,16 +1,21 @@
-var mic, fft;
+var mic, fft, cnv, input, points, backgroundColorPicker;
+
+//Spectrum
 var divisions = 5;
-var cnv;
 var speed = 1;
-var input; 
-var button; 
-var points; //for 3d spectrum and button 
-var bassPoints = 3;
-var midPoints = 3; 
-var treblePoints = 12;
+
+//Mic
 var top_zero = false; 
+var micOn = false;
+var buttons = [];
+var buttonState = [];
+var soundFile = [];
+var NumButtons = 5;
+var wave = [];
 
 function setup() {
+  userStartAudio();
+
   cnv = createCanvas(windowWidth/1.2, windowHeight/2);
   cnv.position((windowWidth/6)+10,windowHeight/2); 
 
@@ -19,6 +24,12 @@ function setup() {
 
   fft = new p5.FFT(0.8, 1024);
   fft.setInput(mic);
+
+  // create a sound recorder
+  recorder = new p5.SoundRecorder();
+
+  // connect the mic to the recorder
+  recorder.setInput(mic);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,6 +40,7 @@ function draw() {
   var h = (height/divisions);
   var spectrum = fft.analyze();
   var newBuffer = [];
+  
   stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),100);
 
   var scaledSpectrum = splitOctaves(spectrum, 12);
@@ -85,7 +97,6 @@ function splitOctaves(spectrum, slicesPerOctave) {
   else{
     points = 0; 
   }
-
 
   //print("array", trebleslider.value(), bassslider.value(), midslider.value()); 
   //print(points);
@@ -163,6 +174,8 @@ function smoothPoint(spectrum, index, numberOfNeighbors) {
 
 var side_bar = function(p) { 
   var side_cnv; 
+  var header_x = 10; 
+  var descriptor_x = 150;
 
   p.setup = function() {
     side_cnv = p.createCanvas(windowWidth/6, windowHeight); 
@@ -170,86 +183,95 @@ var side_bar = function(p) {
     p.background(49,51,53, 100);
     p.noLoop();
 
-    selection = createSelect(); 
-    selection.position(10,95); 
-    selection.option("Full View");
-    selection.option("Top View"); 
-    selection.option("Bottom View"); 
-    selection.option("Empty View"); 
-    selection.changed(mySelectEvent);  
+    micButton = createDiv('Mic ON');
+    micButton.class('button_style');
+    micButton.mousePressed(restartMic);
+    micButton.position(10, 80);
+
+    // Create a set of buttons to record/play sounds
+  for (i=0; i<NumButtons; i++) {
+    buttons[i] = createDiv('Record sound '+ (i+1));
+    buttons[i].class('button_style');
+    buttons[i].mousePressed( toggleButton(i) );
+    buttons[i].position(10,i*45 + 125);
+    buttonState[i] = 0;
+    
+    // this sound file will be used to
+    // playback & save the recording
+    soundFile[i] = new p5.SoundFile();      
+  }
 
     bassslider = createSlider(0,15,3); 
-    bassslider.position(10, 200); 
+    bassslider.position(header_x, 430); 
 
     midslider = createSlider(0,15,3); 
-    midslider.position(10, 220); 
+    midslider.position(header_x, 450); 
 
     trebleslider = createSlider(0,15,12); 
-    trebleslider.position(10, 240); 
+    trebleslider.position(header_x, 470); 
 
-    r_slide = createSlider(0, 255, 255); 
-    r_slide.position(10, 340); 
-
-    g_slide = createSlider(0,255, 255); 
-    g_slide.position(10, 360); 
-
-    b_slide = createSlider(0,255,255); 
-    b_slide.position(10, 380); 
-
-    //////////////
+    ////////////////
 
     rline_slide = createSlider(0, 255, 255); 
-    rline_slide.position(10, 430); 
+    rline_slide.position(header_x, 580); 
 
     gline_slide = createSlider(0,255, 119); 
-    gline_slide.position(10, 450); 
+    gline_slide.position(header_x, 600); 
 
     bline_slide = createSlider(0,255,0); 
-    bline_slide.position(10, 470); 
+    bline_slide.position(header_x, 620); 
+
+    ////////////////
+
+    r_slide = createSlider(0, 255, 255); 
+    r_slide.position(header_x, 670); 
+
+    g_slide = createSlider(0,255, 255); 
+    g_slide.position(header_x, 690); 
+
+    b_slide = createSlider(0,255,255); 
+    b_slide.position(header_x, 710); 
   }
 
   p.draw = function() {
     p.fill(255,255,255); 
-    p.textFont('Baskerville'); 
+    p.textFont('Baskerville');
 
     //Headers
     p.textSize(36); 
-    p.text('AudioWorks', 10,35);
+    p.text('AudioWorks', header_x,35);
 
     //Sub Headers
     p.textSize(24); 
-    p.text("View Adjuster", 10, 70); 
-    p.text("Frequency Adjuster", 10, 155); 
-    p.text("Color Adjuster", 10, 300); 
+    p.text("Sound Recorder", header_x, 70); 
+    p.text("Frequency Adjuster", header_x, 380); 
+    p.text("Color Adjuster", header_x, 530); 
 
     //General Text Size 
     p.textSize(14);
 
-    //View Blurb
-    p.text("Change which waveform runs below", 10, 87); 
-
     //Frequency Blurb
-    p.text("Slide through values 0 to 15 to change", 10,175)
-    p.text("input sensitivity for each frequency range!", 10, 190)
+    p.text("Slide through values 0 to 15 to change", header_x,400);
+    p.text("input sensitivity for each frequency range!", header_x, 415);
     
     //frequency slider descriptions
-    p.text("Bass input", 150, 212); 
-    p.text("Mid input", 150, 232);  
-    p.text("Treble input", 150, 252);
+    p.text("Bass input", descriptor_x, 442); 
+    p.text("Mid input", descriptor_x, 462);  
+    p.text("Treble input", descriptor_x, 482);
 
     //colour picker description
-    p.text("Change the line and background color", 10, 320); 
+    p.text("Change the line and background color", header_x, 550); 
 
-    //colour slider descriptions
-    p.text("Background Color", 10, 340); 
-    p.text("Red", 150, 354); 
-    p.text("Green", 150, 374); 
-    p.text("Blue", 150, 394); 
+    // //colour slider descriptions
+    p.text("Line Color", header_x, 570); 
+    p.text("Red", descriptor_x, 594); 
+    p.text("Green", descriptor_x, 614); 
+    p.text("Blue", descriptor_x, 634); 
 
-    p.text("Line Color", 10, 420); 
-    p.text("Red", 150, 444); 
-    p.text("Green", 150, 464); 
-    p.text("Blue", 150, 484); 
+    p.text("Background Color", header_x, 660); 
+    p.text("Red", descriptor_x, 684); 
+    p.text("Green", descriptor_x, 704); 
+    p.text("Blue", descriptor_x, 724); 
 
   }
 
@@ -282,8 +304,10 @@ var o_sketch = function(p) {
     p.text("Bass input",0,0);
     p.strokeWeight(2);
     p.noFill();
+
     p.stroke(rline_slide.value(),gline_slide.value(),bline_slide.value());
     p.background(r_slide.value(),g_slide.value(),b_slide.value());
+
     p.waveform = p.fft.waveform(); 
     p.beginShape();
     p.trigger = 0;
@@ -311,37 +335,63 @@ var side_bar = new p5(side_bar);
 var space = new p5(); 
 var o_p5 = new p5(o_sketch);
 
+///////////////////////////////////////////////////////////////////////////////
 
-function mySelectEvent() {
-  var view = selection.value(); 
-  if (view == "Full View") {
-    top_zero = false; 
-    mic.start(); 
-    fft.setInput(mic); 
-    o_p5.mic.start(); 
-    o_p5.fft.setInput(o_p5.mic); 
-  }
-  else if (view == "Bottom View") {
-    top_zero = false; 
-    mic.start(); 
-    fft.setInput(mic); 
-    o_p5.mic.stop(); 
-    o_p5.fft.setInput(o_p5.mic); 
+function toggleButton(idx) {
 
-  }
-  else if (view == "Top View") {
-    top_zero = true; 
-    o_p5.mic.start(); 
-    o_p5.fft.setInput(o_p5.mic); 
+  return function() {
 
-  }
-  else if (view == "Empty View") {
-    mic.stop(); 
-    fft.setInput(mic); 
-    o_p5.mic.stop(); 
-    o_p5.fft.setInput(o_p5.mic); 
+    // make sure user enabled the mic
+    if (buttonState[idx] === 0 && micOn) {
+      // record to our p5.SoundFile
+      recorder.record(soundFile[idx]);
+
+      buttons[idx].html('Stop recording'); 
+      buttons[idx].style('background-color','#ff0000');
+      buttonState[idx] = 1;
+    }
+    else if (buttonState[idx] === 1) {
+
+      // stop recorder and
+      // send result to soundFile
+      recorder.stop();
+
+      buttons[idx].html('Play sound '+idx);
+      buttons[idx].style('background-color','#00cc00');
+      buttonState[idx] = 2;
+    }
+    else if (buttonState[idx] === 2) {
+      mic.stop();
+      micOn = false;
+      micButton.style('background-color','#888888');
+
+      fft.setInput(soundFile[idx]);
+      soundFile[idx].play(); // play the result!
+//      save(soundFile, 'mySound.wav'); 
+
+//      wave = soundFile[idx].getPeaks(1024);       
+    }
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+function restartMic() {
+  if ( !micOn ) {
+    mic.start();
+    micOn = true;
+    micButton.html('Mic ON');
+    micButton.style('background-color', '#4400ff');
+  }
+  else {
+    mic.stop();
+    micOn = false;
+    micButton.html('Mic OFF');
+    micButton.style('background-color', '#888888');
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 function windowResized() {
   resizeCanvas(windowWidth/1.2, windowHeight/2);
@@ -349,6 +399,6 @@ function windowResized() {
   o_p5.resizeCanvas(windowWidth/1.2, windowHeight/2);
   background(255,255,255,1); 
   o_p5.background(0,0,0);
-  o_cnv.position(250, windowHeight/2); 
+  o_sketch.position(250, windowHeight/2); 
 }
 
