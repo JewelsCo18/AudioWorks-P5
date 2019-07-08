@@ -2,6 +2,9 @@
 
 Developing version of Audioworks using the P5 libary 
 
-Update notes:
-- Only works on chrome (currently debugging safari compatibility) 
-- Test using local servers 
+Update Notes:
+- Compatible with Chrome and Safari
+- Capable of recording, changing background and line colour, adjusting frequency points
+
+Current Issues: 
+- lower FFT not working correctly on Safari 
