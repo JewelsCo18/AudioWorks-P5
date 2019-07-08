@@ -4,7 +4,7 @@ var mic, fft, cnv, input, points, backgroundColorPicker;
 var divisions = 5;
 var speed = 1;
 
-//Mic
+//Mic 
 var top_zero = false; 
 var micOn = false;
 var buttons = [];
@@ -13,7 +13,10 @@ var soundFile = [];
 var NumButtons = 5;
 var wave = [];
 
+
+//Global Setup for Bottom FFT (Landscape Frequency)
 function setup() {
+  //for safari use of microphone
   userStartAudio();
 
   cnv = createCanvas(windowWidth/1.2, windowHeight/2);
@@ -37,16 +40,17 @@ function setup() {
 function draw() {
   noFill();
 
+  //variable to pinpoint correct heights of sound
   var h = (height/divisions);
   var spectrum = fft.analyze();
   var newBuffer = [];
-  
-  stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),100);
-
   var scaledSpectrum = splitOctaves(spectrum, 12);
   var len = scaledSpectrum.length;
-
+  
+  //aesthetics
+  stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),100);
   background(r_slide.value(),g_slide.value(),b_slide.value(),1);
+
   // copy before clearing the background
   copy(cnv,0,0,width,height,0,speed,width,height);
 
@@ -73,6 +77,7 @@ function splitOctaves(spectrum, slicesPerOctave) {
   var scaledSpectrum = [];
   var len = spectrum.length;
 
+  //optional adjustment of spectrum points dependent of frequency ranges
   if (top_zero == false) {
     if (fft.getEnergy("treble") == true) {
       points = trebleslider.value();
@@ -172,6 +177,7 @@ function smoothPoint(spectrum, index, numberOfNeighbors) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//Where all descriptions and text go
 var side_bar = function(p) { 
   var side_cnv; 
   var header_x = 10; 
@@ -201,6 +207,7 @@ var side_bar = function(p) {
     soundFile[i] = new p5.SoundFile();      
   }
 
+    //Frequency Sliders
     bassslider = createSlider(0,15,3); 
     bassslider.position(header_x, 430); 
 
@@ -210,8 +217,7 @@ var side_bar = function(p) {
     trebleslider = createSlider(0,15,12); 
     trebleslider.position(header_x, 470); 
 
-    ////////////////
-
+    //Stroke Sliders
     rline_slide = createSlider(0, 255, 255); 
     rline_slide.position(header_x, 580); 
 
@@ -221,8 +227,7 @@ var side_bar = function(p) {
     bline_slide = createSlider(0,255,0); 
     bline_slide.position(header_x, 620); 
 
-    ////////////////
-
+    //Background Sliders
     r_slide = createSlider(0, 255, 255); 
     r_slide.position(header_x, 670); 
 
@@ -245,7 +250,7 @@ var side_bar = function(p) {
     p.textSize(24); 
     p.text("Sound Recorder", header_x, 70); 
     p.text("Frequency Adjuster", header_x, 380); 
-    p.text("Color Adjuster", header_x, 530); 
+    p.text("Color Adjuster", header_x, 525); 
 
     //General Text Size 
     p.textSize(14);
@@ -260,7 +265,7 @@ var side_bar = function(p) {
     p.text("Treble input", descriptor_x, 482);
 
     //colour picker description
-    p.text("Change the line and background color", header_x, 550); 
+    p.text("Change the line and background color", header_x, 545); 
 
     // //colour slider descriptions
     p.text("Line Color", header_x, 570); 
@@ -279,6 +284,7 @@ var side_bar = function(p) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+//Isolated setup for Top Waveform 
 var o_sketch = function(p) { 
   p.x = 100; 
   p.y = 100;  
@@ -300,34 +306,25 @@ var o_sketch = function(p) {
 
   }
   p.draw = function() {
-
-    p.text("Bass input",0,0);
     p.strokeWeight(2);
     p.noFill();
 
     p.stroke(rline_slide.value(),gline_slide.value(),bline_slide.value());
     p.background(r_slide.value(),g_slide.value(),b_slide.value());
 
-    p.waveform = p.fft.waveform(); 
+    //Dr. Kim's code don't know where to utilise
+    // var spectrum = p.fft.analyze();
+    // var subbands = p.fft.getOctaveBands(12,55.0);
+    // var energy = p.fft.logAverages(subbands);
+
+    var wave = p.fft.waveform();
+  
     p.beginShape();
-    p.trigger = 0;
-
-  for (i = 0; i < p.waveform.length; i++){
-      if ((p.waveform[i] > 0) && (p.waveform[i-1] <= 0) && (p.trigger == 0))
-      {
-        p.trigger = 1;
-        p.firstPos = i;
+    for (i = 0; i < wave.length; i++) {
+      vertex(i, map(wave[i], 0, 1, 200, 100));
       }
-      if (p.trigger == 1)
-      {
-        p.x = map((i - p.firstPos), 0, p.waveform.length, 0, p.width * 3);
-        p.y = map(p.waveform[i], -1, 1, p.height, 0);
-      }
-      p.vertex(p.x, p.y);
+      p.endShape();
     }
-    p.endShape();
-
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -337,6 +334,7 @@ var o_p5 = new p5(o_sketch);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//Dr. Kim's toggle button for Mic button 
 function toggleButton(idx) {
 
   return function() {
@@ -366,16 +364,14 @@ function toggleButton(idx) {
       micButton.style('background-color','#888888');
 
       fft.setInput(soundFile[idx]);
-      soundFile[idx].play(); // play the result!
-//      save(soundFile, 'mySound.wav'); 
-
-//      wave = soundFile[idx].getPeaks(1024);       
+      soundFile[idx].play(); // play the result!    
     }
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//Dr Kim's audio toggle
 function restartMic() {
   if ( !micOn ) {
     mic.start();
