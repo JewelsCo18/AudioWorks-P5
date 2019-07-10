@@ -7,4 +7,3 @@ Developing version of Audioworks using the P5 libary
 - Capable of recording, changing background and line colour, adjusting frequency points
 
 # Current Issues: 
-- lower FFT not working correctly on Safari 
