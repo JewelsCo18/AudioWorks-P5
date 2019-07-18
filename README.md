@@ -9,3 +9,4 @@ Developing version of Audioworks using the P5 libary
 # Current Issues/Goals: 
 - dynamic RGB slider 
 - zoom function
+- synthesizer 
