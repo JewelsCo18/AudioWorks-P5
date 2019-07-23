@@ -69,29 +69,84 @@ canvas {
 	border-radius: 12px;
 }
 
-.red_bar{
-	background-image: linear-gradient(to right,black,red);
-	border-radius: 3px; 
-	border-style: solid; 
-	border-width:thin; 
-	width: 140px;
+/*SLIDER CSS*/
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 13%;
+  margin: 7.3px 0;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 13%;
+  height: 11.4px;
+  cursor: pointer;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+input[type=range]::-webkit-slider-thumb {
+  border: 1.8px solid #00001e;
+  height: 26px;
+  width: 26px;
+  border-radius: 15px;
+  background: #ffffff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -7.5px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #4400ff;
+}
+input[type=range]::-moz-range-track {
+  width: 13%;
+  height: 11.4px;
+  cursor: pointer;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+input[type=range]::-moz-range-thumb {
+  border: 1.8px solid #00001e;
+  height: 26px;
+  width: 26px;
+  border-radius: 15px;
+  background: #ffffff;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  width: 13%;
+  height: 11.4px;
+  cursor: pointer;
+  border-color: transparent;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: black;
+  border: 0.2px solid #010101;
+  border-radius: 2.6px;
+}
+input[type=range]::-ms-fill-upper {
+  background: black;
+  border: 0.2px solid #010101;
+  border-radius: 2.6px;
+}
+input[type=range]::-ms-thumb {
+  border: 1.8px solid #00001e;
+  height: 26px;
+  width: 26px;
+  border-radius: 15px;
+  background: #ffffff;
+  cursor: pointer;
+  height: 11.4px;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: black;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: black;
 }
 
-.green_bar{
-	background-image: linear-gradient(to right,black,green);
-	border-radius: 3px; 
-	border-style: solid; 
-	border-width:thin; 
-	width: 140px;
-}
-
-.blue_bar{
-	background-image: linear-gradient(to right,black,blue);
-	border-radius: 3px; 
-	border-style: solid; 
-	border-width:thin; 
-	width: 140px;
-}
 
 
 

@@ -62,15 +62,19 @@ var saw_bool = false;
 //Colour Vars; 
 var curr_stroke = [255,119,0]; //rgb
 var curr_background = [255,255,255]; //rgb
+var string_colors = "rgb(255,119,0)";
 
 //test vars
 let maxSpectrumFrames = 64;
-
 
 //Global Setup for Bottom FFT (Landscape Frequency)
 function setup() {
 	//for safari use of microphone
 	userStartAudio();
+
+  //scroll 
+  window.scrollTo(0,20); 
+  window.scrollBy(0,20); 
 
 //	cnv = createCanvas(windowWidth/1.2, windowHeight/2);
 //  cnv = createCanvas(980 - (139), 400); 
@@ -134,7 +138,8 @@ function draw() {
 		curr_stroke[2] = bline_slide.value();   
 		curr_background[0] = red_slide.value();
 		curr_background[1] = green_slide.value();
-		curr_background[2] = blue_slide.value(); 
+		curr_background[2] = blue_slide.value();
+    string_colors = "rgb(" + curr_stroke[0] + "," + curr_stroke[1] + "," + curr_stroke[2] + ")";  
 	}
 	else{
 //		stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],100); 
@@ -150,6 +155,8 @@ function draw() {
       oscillators[i].freq(curr_fft*i);
       oscillators[i].amp(sliders[i].value()); 
       oscillators[i].setType(curr_wave); 
+      sliders[i].style('background-color', string_colors); 
+      overall_frequency_slider.style('background-color', string_colors); 
     } 
     //updating text
     // for (i = 1; i <= sliderNums; i++) { 
@@ -420,72 +427,47 @@ function colour_adjustment() {
     side_bar.redraw(); 
 
     //Stroke Sliders
-    rline_background = createDiv("red"); 
-    rline_background.class("red_bar"); 
-    rline_background.position(header_x, colour_button_pos - 180); 
 
     rline_slide = createSlider(0, 255, curr_stroke[0],1); 
     rline_slide.position(slide_x, colour_button_pos - 180); 
+    rline_slide.style('background-image', 'linear-gradient(to right,black,red')
 
     //////
 
-    gline_background = createDiv("green"); 
-    gline_background.class("green_bar"); 
-    gline_background.position(header_x, colour_button_pos - 150);
-
     gline_slide = createSlider(0,255, curr_stroke[1],1);
     gline_slide.position(slide_x, colour_button_pos - 150); 
+    gline_slide.style('background-image', 'linear-gradient(to right,black,green')
 
     ////
 
-    bline_background = createDiv("blue"); 
-    bline_background.class("blue_bar"); 
-    bline_background.position(header_x, colour_button_pos - 120);
-
     bline_slide = createSlider(0,255,curr_stroke[2],1); 
     bline_slide.position(slide_x, colour_button_pos - 120); 
+    bline_slide.style('background-image', 'linear-gradient(to right,black,blue')
 
     //Background Sliders
 
-    red_background = createDiv("red"); 
-    red_background.class("red_bar"); 
-    red_background.position(header_x, colour_button_pos - 70); 
-
     red_slide = createSlider(0, 255, curr_background[0],1);
     red_slide.position(slide_x, colour_button_pos - 70); 
+    red_slide.style('background-image', 'linear-gradient(to right,black,red')
 
     /////////
-
-    green_background = createDiv("_"); 
-    green_background.class("green_bar"); 
-    green_background.position(header_x, colour_button_pos - 40)
 
     green_slide = createSlider(0,255, curr_background[1],1);
     green_slide.position(slide_x, colour_button_pos - 40); 
+    green_slide.style('background-image', 'linear-gradient(to right,black,green')
 
     /////////
 
-    blue_background = createDiv("blue"); 
-    blue_background.class("blue_bar"); 
-    blue_background.position(header_x, colour_button_pos - 10)
-
     blue_slide = createSlider(0,255,curr_background[2],1);
     blue_slide.position(slide_x, colour_button_pos - 10); 
+    blue_slide.style('background-image', 'linear-gradient(to right,black,blue')
   }
   else{
     colour_button.style('background-color', '#ffffff');
 
-    rline_background.hide(); 
-    gline_background.hide(); 
-    bline_background.hide();
-
     rline_slide.hide(); 
     gline_slide.hide(); 
     bline_slide.hide(); 
-
-    red_background.hide(); 
-    green_background.hide(); 
-    blue_background.hide(); 
 
     red_slide.hide(); 
     green_slide.hide(); 
@@ -523,6 +505,7 @@ function synthesizer() {
     overall_frequency_slider = createSlider(0,1000,440); 
     overall_frequency_slider.size((windowWidth-200)/1.25); 
     overall_frequency_slider.position(95+ (windowWidth-200)/5, 430); 
+    overall_frequency_slider.style('background-color', string_colors); 
 
     var slider_pos = (windowWidth-200)/sliderNums-1
     for (i=1; i<sliderNums+1; i++) {
@@ -530,6 +513,7 @@ function synthesizer() {
       sliders[i].size(225);
       sliders[i].style('transform', 'rotate(-90deg'); 
       sliders[i].position(80 + slider_pos, 575);  
+      sliders[i].style('background-color', string_colors); 
       oscillators[i].start();  
       fft.setInput(oscillators[i]); 
       slider_pos += (windowWidth-200)/sliderNums-1;
