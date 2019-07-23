@@ -10,7 +10,7 @@ canvas {
 .subheader_style {
 	background-color: white;
 	height: 35px;
-	width: 200px;
+	width: 180px;
 	font-family: "Times New Roman", Arial, sans-serif;
 	color: black;
 	text-align: center;
@@ -27,7 +27,7 @@ canvas {
 .mic_style {
 	background-color: white;
 	height: 35px;
-	width: 200px;
+	width: 180px;
 	font-family: "Times New Roman", Arial, sans-serif;
 	color: black;
 	text-align: center;
@@ -44,7 +44,7 @@ canvas {
 .button_style {
 	background-color: white;
 	height: 35px;
-	width: 200px;
+	width: 180px;
 	font-family: "Times New Roman", Arial, sans-serif;
 	color: black;
 	text-align: center;

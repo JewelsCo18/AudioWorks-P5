@@ -28,8 +28,8 @@ var o_sketch = function(p) {
 
 	p.setup = function() {
 //		o_cnv = p.createCanvas(980 - (139), 400);
-		o_cnv = p.createCanvas(windowWidth - 220, 400);
-		o_cnv.position(220,0); 
+		o_cnv = p.createCanvas(windowWidth - 200, 400);
+		o_cnv.position(200,0); 
 
 		//    p.fft = new p5.FFT(0.8, 2048);
 
@@ -107,11 +107,11 @@ var o_sketch = function(p) {
 			for (idx=1; idx <= p.maxScale; idx++) {
 				if (idx == waveScale) {
 					p.strokeWeight(4);
-					p.circle(windowWidth-220-p.rightMargin-p.buttonSpacing*idx,p.topMargin,16);
+					p.circle(windowWidth-200-p.rightMargin-p.buttonSpacing*idx,p.topMargin,16);
 				}
 				else {
 					p.strokeWeight(0);
-					p.circle(windowWidth-220-p.rightMargin-p.buttonSpacing*idx,p.topMargin,10);
+					p.circle(windowWidth-200-p.rightMargin-p.buttonSpacing*idx,p.topMargin,10);
 				}
 			}		
 			
