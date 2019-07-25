@@ -8,7 +8,7 @@
 var side_bar = function(p) { 
 
   p.setup = function() {
-    var side_cnv = p.createCanvas(220, 800); 
+    var side_cnv = p.createCanvas(220, 768); 
     side_cnv.position(0,0);
     p.noLoop();
 
@@ -41,7 +41,7 @@ var side_bar = function(p) {
 
   p.draw = function() {
     p.fill(255,255,255); 
-    p.textFont('Baskerville');
+    p.textFont('Helvetica');
     var last_button = synthesis_button.y +synthesis_button.height/2; 
 
     //Headers
