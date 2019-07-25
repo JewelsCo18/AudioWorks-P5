@@ -30,6 +30,7 @@ var o_sketch = function(p) {
 //		o_cnv = p.createCanvas(980 - (139), 400);
 		o_cnv = p.createCanvas(windowWidth - 200, 368);
 		o_cnv.position(200,0); 
+		p.loop(); 
 
 		//    p.fft = new p5.FFT(0.8, 2048);
 
