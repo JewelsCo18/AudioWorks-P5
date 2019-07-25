@@ -4,7 +4,7 @@ var keyboard_sketch = function(p){
 
 	p.setup = function() {
 		cnv = p.createCanvas(0, 0);
-		cnv.position(0,0);
+		cnv.position(0,0); 
 
 		note = new p5.TriOsc(); 
 		note.start(); 
@@ -50,6 +50,14 @@ var keyboard_sketch = function(p){
 
 			p.fill(68,0,255);
 			p.rect(230,move_y,windowWidth - 200, 50);
+
+			// left_button = createDiv("<<"); 
+		 //    left_button.style("piano_button_style");
+		 //    left_button.mousePressed(keyboard_p5.move_left)
+
+		 //    right_button = createDiv(">>"); 
+		 //    right_button.style("piano_button_style"); 
+		 //    right_button.mousePressed(keyboard_p5.move_right); 
 
 			left_button.position((windowWidth/3.5), move_y+7); 
 			right_button.position((windowWidth/1.05), move_y+7);
@@ -127,7 +135,7 @@ var keyboard_sketch = function(p){
 	}
 
 	p.mouseDragged = function(){ //WONT GO UP FOR SOME REASON!!!
-		if (230<= initial_x && initial_x <= windowWidth && move_y <= initial_y && initial_y <= move_y + 70){
+		if (230<= initial_x && initial_x <= windowWidth && move_y <= initial_y && initial_y <= move_y + 90){
 			p.loop(); 
 			move_y = p.mouseY;  
 		}

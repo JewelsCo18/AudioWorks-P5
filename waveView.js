@@ -28,7 +28,7 @@ var o_sketch = function(p) {
 
 	p.setup = function() {
 //		o_cnv = p.createCanvas(980 - (139), 400);
-		o_cnv = p.createCanvas(windowWidth - 200, 368);
+		o_cnv = p.createCanvas(windowWidth - 200, 400);
 		o_cnv.position(200,0); 
 		p.loop(); 
 
@@ -37,12 +37,12 @@ var o_sketch = function(p) {
 		//    p.fft.setInput(mic);
 
 		p.o_zoom_in = createButton("+"); 
-		p.o_zoom_in.position(windowWidth - p.rightMargin,p.topMargin); 
+		p.o_zoom_in.position(windowWidth - p.rightMargin,20); 
 		p.o_zoom_in.mousePressed(p.zoom_in);
 		p.o_zoom_in.size(zoomButtonSize, zoomButtonSize); 
 
 		p.o_zoom_out = createButton("-"); 
-		p.o_zoom_out.position(windowWidth - p.rightMargin - (p.maxScale*p.buttonSpacing) - (zoomButtonSize+p.buttonSpacing),p.topMargin); 
+		p.o_zoom_out.position(windowWidth - p.rightMargin - (p.maxScale*p.buttonSpacing) - (zoomButtonSize+p.buttonSpacing),20); 
 		p.o_zoom_out.mousePressed(p.zoom_out);
 		p.o_zoom_out.size(zoomButtonSize, zoomButtonSize);
 
@@ -108,11 +108,11 @@ var o_sketch = function(p) {
 			for (idx=1; idx <= p.maxScale; idx++) {
 				if (idx == waveScale) {
 					p.strokeWeight(4);
-					p.circle(windowWidth-200-p.rightMargin-p.buttonSpacing*idx,p.topMargin+p.buttonSize/2,16);
+					p.circle(windowWidth-200-p.rightMargin-p.buttonSpacing*idx,p.topMargin,16);
 				}
 				else {
 					p.strokeWeight(0);
-					p.circle(windowWidth-200-p.rightMargin-p.buttonSpacing*idx,p.topMargin+p.buttonSize/2,10);
+					p.circle(windowWidth-200-p.rightMargin-p.buttonSpacing*idx,p.topMargin,10);
 				}
 			}		
 			

@@ -59,20 +59,14 @@ canvas {
 }
 
 .piano_button_style {
-	background-color: black;
-	height: 50px;
-	width: 100px;
+	background-color: white;
+	height: 200px;
+	width: 200px;
 	font-family: "Times New Roman", Arial, sans-serif;
-	color: white;
 	text-align: center;
-	font-size: 24px; 
+	font-size: 48px; 
 	vertical-align: middle;
 	border-radius: 12px;
-}
-
-.piano_button_style:hover { /*doesnt change for some reason */
-	background-color: green;
-	cursor: pointer;
 }
 
 .piano_white_key_style{

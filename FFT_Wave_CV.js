@@ -1,20 +1,32 @@
 //IPAD SCREEN SIZE 
 //createCanvas(980, 800); 
 
-var mic, fft, cnv, input, points, backgroundColorPicker, note, initial_x, initial_y;
+var mic, fft, cnv, input, points, backgroundColorPicker, note, initial_x, initial_y, curr_recorded_sound;
 
 //Spectrum Vars
 var divisions = 5;
 var speed = 1;
 let fftSize = 1024;
 var spectra = [];
-let fftMaxScale = 4;		// Max scaling factor for fft (spectrum) plot
-							// NOTE: *Lower* scale factor is zoomed "out" (shows greater frequency range)
-var fftScale = 0; 			// Initial fft (spectrum) plot scaling factor: 0...3
+let fftMaxScale = 4;    // Max scaling factor for fft (spectrum) plot
+              // NOTE: *Lower* scale factor is zoomed "out" (shows greater frequency range)
+var fftScale = 1;       // Initial fft (spectrum) plot scaling factor: 0...3
 let rightMargin = 75;
-let dotSpacing = 35;		// Spacing between zoom indicator dots
+let dotSpacing = 35;    // Spacing between zoom indicator dots
 let topMargin = 50;
-let zoomButtonSize = 50;	// Zoom buttons default dimensions
+let zoomButtonSize = 50;  // Zoom buttons default dimensions
+var dot = false;
+var dot_x = 0;
+var dot_y = 0;
+var scrollSpectrum = false;
+var scrollStartX;
+var scrollStartY;
+var scrollCurX;
+var scrollCurY;
+var scrollOffset = 0;
+var textOffset = 0;
+
+let maxSpectrumFrames = 64;
 
 //Mic Vars
 var NumButtons = 5; 
@@ -34,8 +46,8 @@ var move_position = 0;
 var temp_x = 0; 
 var temp_y = 0; 
 var start_pos;
-var waveScale = 3;			// Initial wave plot scaling factor (power of 2, i.e., 2^3 = 8x)
-							// NOTE: higher scale factor is zooming "out", lower is zooming "in"
+var waveScale = 3;      // Initial wave plot scaling factor (power of 2, i.e., 2^3 = 8x)
+              // NOTE: higher scale factor is zooming "out", lower is zooming "in"
 //Button vars
 var header_x = 10;
 var slide_x = 15;  
@@ -75,55 +87,54 @@ var black_key_pos = 255;
 var octave_start = 3; 
 var curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; 
 var white_keys = []; 
-var black_keys = []; 
-
+var black_keys = [];  
 
 //test vars
-let maxSpectrumFrames = 64;
 
 //Global Setup for Bottom FFT (Landscape Frequency)
 function setup() {
-	//for safari use of microphone
-	userStartAudio();
+  //for safari use of microphone
+  userStartAudio();
 
   //scroll 
-  window.scrollTo(0,20); 
-  window.scrollBy(0,20); 
+//  window.scrollTo(0,20); 
+//  window.scrollBy(0,20); 
 
-//	cnv = createCanvas(windowWidth/1.2, windowHeight/2);
+//  cnv = createCanvas(windowWidth/1.2, windowHeight/2);
 //  cnv = createCanvas(980 - (139), 400); 
-	cnv = createCanvas(windowWidth - 200, 400); 
-	cnv.position(200, 400); 
+  cnv = createCanvas(windowWidth - 200, 400); 
+  cnv.position(200, 368); 
 
-	fft_b_zoom_in = createButton("+"); 
-	fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
-	fft_b_zoom_in.size(zoomButtonSize, zoomButtonSize);
-	fft_b_zoom_in.mousePressed(fft_zoom_in);  
+  fft_b_zoom_in = createButton("+"); 
+  fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
+  fft_b_zoom_in.size(zoomButtonSize, zoomButtonSize);
+  fft_b_zoom_in.mousePressed(fft_zoom_in);  
   
-	fft_b_zoom_out = createButton("-"); 
-	fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 420); 
-	fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
-	fft_b_zoom_out.mousePressed(fft_zoom_out); 
+  fft_b_zoom_out = createButton("-"); 
+  fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 420); 
+  fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
+  fft_b_zoom_out.mousePressed(fft_zoom_out); 
 
   mic = new p5.AudioIn(); 
-	mic.start();
+  mic.start();
+  micOn = true;
 
   micOn = true;
 
 
-	fft = new p5.FFT(0.8, 1024);
-	fft.setInput(mic);
+  fft = new p5.FFT(0.8, 1024);
+  fft.setInput(mic);
 
-	// create a sound recorder
-	recorder = new p5.SoundRecorder();
+  // create a sound recorder
+  recorder = new p5.SoundRecorder();
 
-	// connect the mic to the recorder
-	recorder.setInput(mic);
+  // connect the mic to the recorder
+  recorder.setInput(mic);
 
-	// Initialize array for past spectrum frames (spectra)
-	for (s=0; s<maxSpectrumFrames; s++) {  
-		spectra[s] = new Array(512).fill(0); 
-	}
+  // Initialize array for past spectrum frames (spectra)
+  for (s=0; s<maxSpectrumFrames; s++) {  
+    spectra[s] = new Array(512).fill(0); 
+  }
 
   //oscillator creation
   for (i = 1; i<= sliderNums; i++) {
@@ -131,39 +142,41 @@ function setup() {
     oscillators[i].freq(440*i);
     oscillators[i].amp(0); 
   }
+  
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
 function draw() {
-	noFill();
+  noFill();
 
-	//variable to pinpoint correct heights of sound
-	var h = height/divisions;
-	var spectrum = fft.analyze();
-	var newBuffer = [];
+  //variable to pinpoint correct heights of sound
+  var h = height/divisions;
+  var spectrum = fft.analyze();
+  var newBuffer = [];
 
-	spectra.unshift(spectrum.slice(0,512));
-	spectra.pop();
+  spectra.unshift(spectrum.slice(0,512));
+  spectra.pop();
 
-	//aesthetics
-	if (colour_bool == true) {
-		stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),255);
-		background(red_slide.value(),green_slide.value(),blue_slide.value(),255);
-		curr_stroke[0] = rline_slide.value();
-		curr_stroke[1] = gline_slide.value();
-		curr_stroke[2] = bline_slide.value();   
-		curr_background[0] = red_slide.value();
-		curr_background[1] = green_slide.value();
-		curr_background[2] = blue_slide.value();
+  //aesthetics
+  if (colour_bool == true) {
+    stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),255);
+    background(red_slide.value(),green_slide.value(),blue_slide.value(),255);
+    curr_stroke[0] = rline_slide.value();
+    curr_stroke[1] = gline_slide.value();
+    curr_stroke[2] = bline_slide.value();   
+    curr_background[0] = red_slide.value();
+    curr_background[1] = green_slide.value();
+    curr_background[2] = blue_slide.value();
     string_colors = "rgb(" + curr_stroke[0] + "," + curr_stroke[1] + "," + curr_stroke[2] + ")";  
-	}
-	else{
-//		stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],100); 
-		stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255); 
-//		background(curr_background[0],curr_background[1],curr_background[2],1); 
-		background(curr_background[0],curr_background[1],curr_background[2],255); 
-	}
+  }
+  else{
+//    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],100); 
+    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255); 
+//    background(curr_background[0],curr_background[1],curr_background[2],1); 
+    background(curr_background[0],curr_background[1],curr_background[2],255); 
+  }
 
   //synthesis 
   if (synthesis_bool == true){
@@ -173,80 +186,177 @@ function draw() {
       oscillators[i].amp(sliders[i].value()); 
       oscillators[i].setType(curr_wave); 
       sliders[i].style('background-color', string_colors); 
-      overall_frequency_slider.style('background-color', string_colors); 
+      overall_frequency_slider.style('background-color', string_colors);
     } 
   }
   
   //FFT
-	if (pause_fft == 0) {
-		speed = 10; 
+  if (1) {
+//    speed = 10; 
 
-		// Set parameters for drawing spectrum frames
-		if (waveScale == 1) {
-			// Special case for scale = 1 (since 2^1=2), but just show one spectrum frame
-			numSpectrumFrames = 1;
-		} else {
-			numSpectrumFrames = Math.pow(2,waveScale);
-		}		
-		
-		// Change loop increment based on scale
-		if (waveScale == 6) {
-			s_inc = 8;
-		} else if (waveScale == 5) {
-			s_inc = 4;
-		} else if (waveScale == 4) {
-			s_inc = 2;
-		} else {
-			s_inc = 1; 
-		}
-		
-		// Loop to draw current and past spectrum frames
-		for (s=0; s<numSpectrumFrames; s += s_inc) {
-			if (s==0) {
-				strokeWeight(2);
-			}
-			else {
-				strokeWeight(1);
-			}
-			
-			stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
-			
-			beginShape();
+    // Set parameters for drawing spectrum frames
+    if (waveScale == 1) {
+      // Special case for scale = 1 (since 2^1=2), but just show one spectrum frame
+      numSpectrumFrames = 1;
+    } else {
+      numSpectrumFrames = Math.pow(2,waveScale);
+    }   
+    
+    // Change loop increment based on scale
+    if (waveScale == 6) {
+      s_inc = 8;
+    } else if (waveScale == 5) {
+      s_inc = 4;
+    } else if (waveScale == 4) {
+      s_inc = 2;
+    } else {
+      s_inc = 1; 
+    }
 
-			// Compute the number of spectrum indexes for current fftScale factor
-			spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
-			
-			for (i = 0; i < spectrumEdge ; i++) {
-				curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
-			}
-			endShape();
-		}
+    if (scrollSpectrum) {
+      fftScaleBins = Math.pow(2,9-fftScale); // Number of spectrum points (bins) in plot at current fftScale
+      scrollOffset += round( fftScaleBins * (scrollStartX - scrollCurX)/width );
+      scrollOffset = max( min(scrollOffset, 512-fftScaleBins-1), 0);
+//      console.log(scrollOffset);
+    }
+    
+    if (fftScale == 0) {
+      scrollOffset = 0;
+    }
 
+    
+    // Loop to draw current and past spectrum frames
+    for (s=0; s<numSpectrumFrames; s += s_inc) {
+      if (s==0) {
+        strokeWeight(2);
+      }
+      else {
+        strokeWeight(1);
+      }
+      
+      stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
+      
+      beginShape();
+
+      // Compute the number of spectrum indexes for current fftScale factor
+      spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
+            
+      for (i = 0; i < spectrumEdge ; i++) {
+        curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+      }
+      endShape();
+    }
+
+    drawFrequencyLabels();
+      zoom_buttons(); 
+  }
+  else if (pause_fft == 1 && synthesis_bool == false){
+    speed = 0;
     zoom_buttons(); 
-	}
-	else if (pause_fft == 1 && synthesis_bool == false){
-		speed = 0;
-    zoom_buttons(); 
-	}	
+  } 
   else{
     speed = 1; 
+  }
+  
+/*    if (dot) {
+      fill(20);
+      idx = round( dot_x * (512/width) / Math.pow(2,fftScale) );
+      circle(dot_x, map(spectra[0][idx], 0, 255, height-150, 5), 20);
+  } */
+
+}
+
+
+function touchStarted() {
+  dot_x = mouseX;
+  dot_y = mouseY;
+  dot = true;
+
+  console.log(mouseX);
+  console.log(mouseY);
+  
+  if (mouseY > 300) {
+    // start scrolling
+    scrollSpectrum = true;
+    scrollStartX = mouseX;
+    scrollStartY = mouseY;
+    scrollCurX = mouseX;
+    scrollCutY = mouseY;
+  } 
+//  return false;
+}
+
+function touchMoved() {
+  if (scrollSpectrum) {
+    scrollStartX = scrollCurX;
+    scrollStartY = scrollCurY;
+    scrollCurX = mouseX;
+    scrollCurY = mouseY;
+  }
+}
+
+function touchEnded() {
+  if (scrollSpectrum) {
+    scrollSpectrum = false;
+  }
+}
+
+
+function drawFrequencyLabels() {
+  textAlign(CENTER);
+  fill(0);
+
+  if (scrollSpectrum) {
+    textOffset += scrollCurX - scrollStartX;
+    textOffset = max( min(textOffset, 0), -width*(Math.pow(2,fftScale)-1) );
+  }
+  if (fftScale == 0) {
+    textOffset = 0;
+  }
+
+
+  if (fftScale == 3) {
+    f_steps = 250;
+  } else if (fftScale > 1) {
+    f_steps = 500;
+  } else {
+    f_steps = 1000;
+  }
+  
+//  f_max = min(11000, 11025/Math.pow(2,fftScale) );
+  f_max = 11000;
+  
+  for (f=f_steps; f < f_max; f+= f_steps) {
+    this_x = width * f / 11025 * Math.pow(2,fftScale) + textOffset;
+    if ( (this_x >= 0) && (this_x < width) )  {
+      text(f, width * f / 11025 * Math.pow(2,fftScale) + textOffset, 350);
+    }
   }
 }
 
 // Zoom in/out button functions
 function fft_zoom_in() {
-		if (fftScale < fftMaxScale-1) {
-			fftScale += 1;
-		}
-//		console.log(fftScale);	// For debugging
-	}
+    if (fftScale < fftMaxScale-1) {
+      fftScale += 1;
+    }
+    scrollOffset = 0;
+    textOffset = 0;
+//    scrollOffset *= 2;
+//    textOffset *= 2;
+//    console.log(fftScale);  // For debugging
+  }
 
 function fft_zoom_out() {
-		if (fftScale > 0) {
-			fftScale -= 1; 
-		}
-//		console.log(fftScale);	// For debugging
-	}
+    if (fftScale > 0) {
+      fftScale -= 1; 
+    }
+
+    scrollOffset = 0;
+    textOffset = 0;
+//    scrollOffset = round(scrollOffset/2);
+//    textOffset = round(textOffset/2);
+//    console.log(fftScale);  // For debugging
+  }
 
 function zoom_buttons(){
   // Draw scale indicator dots
@@ -255,11 +365,11 @@ function zoom_buttons(){
       if (idx == fftScale) {
         // Draw dot for the current fftScale selection bigger, plus a thicker stroke
         strokeWeight(4);
-        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin, 16);
+        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin+zoomButtonSize/2, 16);
       }
       else {
         strokeWeight(0);
-        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin, 10);
+        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin+zoomButtonSize/2, 10);
       }
     } 
 }
@@ -308,7 +418,7 @@ var side_bar = function(p) {
 
   p.draw = function() {
     p.fill(255,255,255); 
-    p.textFont('Baskerville');
+    p.textFont('Helvetica');
     p.background(0,0,0); 
 
     var last_button = synthesis_button.y +synthesis_button.height/2; 
@@ -404,10 +514,12 @@ function sound_recorder() {
       buttons[i].mousePressed( toggleButton(i) );
       buttons[i].position(10,i*45 + last_button + 50);
       buttonState[i] = 0;
-      
+       
       // this sound file will be used to
       // playback & save the recording
-      soundFile[i] = new p5.SoundFile();      
+      soundFile[i] = new p5.SoundFile();  
+
+      curr_recorded_sound = null; //new set of sounds nothing recorded yet    
     }
   }
 
@@ -479,9 +591,26 @@ function colour_adjustment() {
 }
 
 function synthesizer() {
-  synthesis_bool = !synthesis_bool;  
+  synthesis_bool = !synthesis_bool;
+  var recording_adjustment = 50;   
 
-  if (sound_bool == true){
+  if (sound_bool == true && curr_recorded_sound != null){
+    sound_button.style('background-color', '#ffffff');
+    sound_bool = false; 
+    side_bar.clear(); 
+    side_bar.redraw(); 
+
+    for (i=0; i<=NumButtons-1; i++){
+      if (buttonState[i] == 2){
+        buttons[i].position(header_x, last_button + 50); 
+        recording_adjustment = 90; 
+      }
+      else{
+        buttons[i].hide(); 
+      }
+    }
+  }
+  else if (sound_bool == true) {
     sound_button.style('background-color', '#ffffff');
     sound_bool = false; 
     side_bar.clear(); 
@@ -502,7 +631,7 @@ function synthesizer() {
     
     overall_frequency_slider = createSlider(0,1000,440); 
     overall_frequency_slider.size((windowWidth-200)/1.25); 
-    overall_frequency_slider.position(95+ (windowWidth-200)/5, 435); 
+    overall_frequency_slider.position(95+ (windowWidth-200)/5, 430); 
     overall_frequency_slider.style('background-color', string_colors); 
 
     var slider_pos = (windowWidth-200)/sliderNums-1
@@ -513,30 +642,29 @@ function synthesizer() {
       sliders[i].position(80 + slider_pos, 575);  
       sliders[i].style('background-color', string_colors); 
       oscillators[i].start();  
-      fft.setInput(oscillators[i]); 
       slider_pos += (windowWidth-200)/sliderNums-1;
     }
 
     keyboard_button = createDiv("Keyboard ON"); 
     keyboard_button.class("button_style"); 
     keyboard_button.mousePressed(access_keyboard); 
-    keyboard_button.position(header_x, last_button + 50);
+    keyboard_button.position(header_x, last_button + recording_adjustment);
 
     sine_button = createDiv("Sine"); 
     sine_button.class("button_style");
     sine_button.style('background-color', '#4400ff'); 
     sine_button.mousePressed(sine_setting); 
-    sine_button.position(header_x, last_button + 90);
+    sine_button.position(header_x, last_button + recording_adjustment + 40);
 
     saw_button = createDiv("Sawtooth"); 
     saw_button.class("button_style"); 
     saw_button.mousePressed(saw_setting); 
-    saw_button.position(header_x, last_button + 130);
+    saw_button.position(header_x, last_button + recording_adjustment + 80);
 
     square_button = createDiv("Square"); 
     square_button.class("button_style");
     square_button.mousePressed(square_setting);  
-    square_button.position(header_x, last_button + 170);
+    square_button.position(header_x, last_button + recording_adjustment + 120);
   }
 
   else{ 
@@ -653,14 +781,6 @@ function access_keyboard(){
 
     recreateKeys();
 
-    left_button = createDiv(" < "); 
-    left_button.style("piano_button_style");
-    left_button.mousePressed(keyboard_p5.move_left)
-
-    right_button = createDiv(" > "); 
-    right_button.style("piano_button_style"); 
-    right_button.mousePressed(keyboard_p5.move_right);  
-
     keyboard_p5.resizeCanvas(windowWidth, windowHeight); 
 
   }
@@ -695,6 +815,14 @@ function clearKeys(){
 
 
 function recreateKeys(){
+  // left_button = createDiv("<<"); 
+  // left_button.style("piano_button_style");
+  // left_button.mousePressed(keyboard_p5.move_left)
+
+  // right_button = createDiv(">>"); 
+  // right_button.style("piano_button_style"); 
+  // right_button.mousePressed(keyboard_p5.move_right);  
+
   var whiteWidth = (windowWidth-200)/keyNums;
   var blackWidth = whiteWidth/2;
   for (i = 0; i<= keyNums; i++){ 
@@ -757,15 +885,52 @@ function toggleButton(idx) {
       buttonState[idx] = 2;
     }
     else if (buttonState[idx] === 2) {
-      mic.stop();
-      micOn = false;
-      micButton.style('background-color','#888888');
-      micButton.html("Mic OFF"); 
+    stopMic();
+
+      buttons[idx].html('Pause sound '+idx);
+      buttons[idx].style('background-color','#cccccc');
+      buttonState[idx] = 3;
+
       fft.setInput(soundFile[idx]);
-      soundFile[idx].play(); // play the result!    
+      soundFile[idx].onended( donePlaying(idx) );    
+      soundFile[idx].play(); // play the result!
+
+      curr_recorded_sound = idx; 
+
+    }
+    else if (buttonState[idx] == 3) {
+    stopMic();
+
+      buttons[idx].html('Play sound '+idx);
+      buttons[idx].style('background-color','#00cc00');
+    buttonState[idx] = 2;
+
+      fft.setInput(soundFile[idx]);
+      soundFile[idx].pause(); // play the result!    
+    
+    
     }
   }
 }
+
+function donePlaying(idx) {
+
+  return function() {
+    buttons[idx].html('Play sound '+idx);
+    buttons[idx].style('background-color','#00cc00');
+    buttonState[idx] = 2;
+  }
+}
+
+function stopMic() {
+  if (micOn) {
+    mic.stop();
+    micOn = false;
+    micButton.style('background-color','#888888');
+    micButton.html("Mic OFF");       
+  }
+}
+
 
 //Dr Kim's audio toggle
 function restartMic() {
