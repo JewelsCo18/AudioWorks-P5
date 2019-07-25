@@ -1,7 +1,7 @@
 //IPAD SCREEN SIZE 
 //createCanvas(980, 800); 
 
-var mic, fft, cnv, input, points, backgroundColorPicker, NumButtons;
+var mic, fft, cnv, input, points, backgroundColorPicker, note, initial_x, initial_y;
 
 //Spectrum Vars
 var divisions = 5;
@@ -17,13 +17,13 @@ let topMargin = 50;
 let zoomButtonSize = 50;	// Zoom buttons default dimensions
 
 //Mic Vars
+var NumButtons = 5; 
 var top_zero = false; 
 var micOn = false;
 var buttons = [];
 var buttonState = [];
 var soundFile = [];
 var wave = [];
-var mic;
 var pause_fft = 0; 
 var pause_wave = 0; 
 var curr_points = [12,3,3]; 
@@ -47,7 +47,7 @@ var synthesis_bool = false;
 var last_button;
 var colour_button_pos; 
 
-//synthesis 
+//synthesis Vars
 var sliderNums = 17;//starting from 1 not 0 
 var sliders = [];
 var slider_vals = [];  
@@ -58,11 +58,25 @@ var curr_wave = 'sine';
 var sine_bool = true; 
 var square_bool = false; 
 var saw_bool = false; 
+var keyboard_bool = false;
 
 //Colour Vars; 
 var curr_stroke = [255,119,0]; //rgb
 var curr_background = [255,255,255]; //rgb
 var string_colors = "rgb(255,119,0)";
+
+//Keyboard Vars; 
+var move_y = 30; 
+var moveable = false; 
+var keyNums = 16 //starting at A4
+var sharp_flatNums = 10 //starting at A4
+var white_key_pos = 230; 
+var black_key_pos = 255;
+var octave_start = 3; 
+var curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; 
+var white_keys = []; 
+var black_keys = []; 
+
 
 //test vars
 let maxSpectrumFrames = 64;
@@ -93,6 +107,9 @@ function setup() {
 
   mic = new p5.AudioIn(); 
 	mic.start();
+
+  micOn = true;
+
 
 	fft = new p5.FFT(0.8, 1024);
 	fft.setInput(mic);
@@ -158,12 +175,6 @@ function draw() {
       sliders[i].style('background-color', string_colors); 
       overall_frequency_slider.style('background-color', string_colors); 
     } 
-    //updating text
-    // for (i = 1; i <= sliderNums; i++) { 
-    //   fill(0,0,0); 
-    //   text("Current Frequency" + curr_fft, 230, 430); 
-    //   text(sliders[i].value(), 45+i*47, 700); 
-    // }
   }
   
   //FFT
@@ -265,6 +276,7 @@ var side_bar = function(p) {
 
     micButton = createDiv('Mic ON');
     micButton.class('subheader_style');
+    micButton.style('background-color', '#4400FF');
     micButton.mousePressed(restartMic);
     micButton.position(10, 50); 
 
@@ -297,6 +309,8 @@ var side_bar = function(p) {
   p.draw = function() {
     p.fill(255,255,255); 
     p.textFont('Baskerville');
+    p.background(0,0,0); 
+
     var last_button = synthesis_button.y +synthesis_button.height/2; 
 
     //Headers
@@ -348,6 +362,7 @@ var side_bar = function(p) {
 var side_bar = new p5(side_bar); 
 var space = new p5(); 
 var o_p5 = new p5(o_sketch);
+var keyboard_p5 = new p5(keyboard_sketch); 
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -383,12 +398,6 @@ function sound_recorder() {
     sound_button.style('background-color', '#4400ff');
     side_bar.redraw(); 
 
-    if (colour_bool == true){
-      NumButtons = 6; 
-    }
-    else{
-      NumButtons = 11; 
-    }
     for (i=0; i<NumButtons; i++) {
       buttons[i] = createDiv('Record sound '+ (i+1));
       buttons[i].class('mic_style');
@@ -416,7 +425,7 @@ function colour_adjustment() {
   colour_bool = !colour_bool;
 
   if (sound_bool == true){
-    for (i = 6; i<=10; i++){ //11 is most amount of numButtons
+    for (i = 0; i<=NumButtons; i++){ //11 is most amount of numButtons
       buttons[i].hide(); 
     }
   }
@@ -427,36 +436,26 @@ function colour_adjustment() {
     side_bar.redraw(); 
 
     //Stroke Sliders
-
     rline_slide = createSlider(0, 255, curr_stroke[0],1); 
     rline_slide.position(slide_x, colour_button_pos - 180); 
     rline_slide.style('background-image', 'linear-gradient(to right,black,red')
 
-    //////
-
     gline_slide = createSlider(0,255, curr_stroke[1],1);
     gline_slide.position(slide_x, colour_button_pos - 150); 
     gline_slide.style('background-image', 'linear-gradient(to right,black,green')
-
-    ////
 
     bline_slide = createSlider(0,255,curr_stroke[2],1); 
     bline_slide.position(slide_x, colour_button_pos - 120); 
     bline_slide.style('background-image', 'linear-gradient(to right,black,blue')
 
     //Background Sliders
-
     red_slide = createSlider(0, 255, curr_background[0],1);
     red_slide.position(slide_x, colour_button_pos - 70); 
     red_slide.style('background-image', 'linear-gradient(to right,black,red')
 
-    /////////
-
     green_slide = createSlider(0,255, curr_background[1],1);
     green_slide.position(slide_x, colour_button_pos - 40); 
     green_slide.style('background-image', 'linear-gradient(to right,black,green')
-
-    /////////
 
     blue_slide = createSlider(0,255,curr_background[2],1);
     blue_slide.position(slide_x, colour_button_pos - 10); 
@@ -495,7 +494,6 @@ function synthesizer() {
 
   if (synthesis_bool == true) { 
     synthesis_button.style('background-color', '#4400ff');
-    pause_fft = 1; 
 
     side_bar.clear();
     side_bar.redraw(); 
@@ -504,7 +502,7 @@ function synthesizer() {
     
     overall_frequency_slider = createSlider(0,1000,440); 
     overall_frequency_slider.size((windowWidth-200)/1.25); 
-    overall_frequency_slider.position(95+ (windowWidth-200)/5, 430); 
+    overall_frequency_slider.position(95+ (windowWidth-200)/5, 435); 
     overall_frequency_slider.style('background-color', string_colors); 
 
     var slider_pos = (windowWidth-200)/sliderNums-1
@@ -544,7 +542,6 @@ function synthesizer() {
   else{ 
     synthesis_button.style('background-color', '#ffffff');
 
-    pause_fft = 0; 
     fft.setInput(mic); 
 
     keyboard_button.hide();
@@ -564,53 +561,19 @@ function synthesizer() {
   }
 }
 
-// function frequency_sliders() { 
-//   frequency_bool = !frequency_bool;
-
-//   if (frequency_bool == true) {
-//     frequency_button.style('background-color', '#4400ff');
-
-//     side_bar.redraw(); 
-//     //Frequency Sliders
-//     trebleslider = createSlider(0,15,curr_points[0]); 
-//     trebleslider.position(slide_x, last_button + 105); 
-
-//     midslider = createSlider(0,15,curr_points[1]); 
-//     midslider.position(slide_x, last_button + 85 ); 
-
-//     bassslider = createSlider(0,15,curr_points[2]); 
-//     bassslider.position(slide_x, last_button + 65); 
-      
-//   }
-//   else{
-//     frequency_button.style('background-color', '#ffffff');
-
-//     bassslider.hide(); 
-//     midslider.hide(); 
-//     trebleslider.hide();
-//     side_bar.clear(); 
-//     side_bar.redraw(); 
-//   }
+function recreateButtons() { 
+  fft_b_zoom_in = createButton("+"); 
+  fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
+  fft_b_zoom_in.size(zoomButtonSize, zoomButtonSize);
+  fft_b_zoom_in.mousePressed(fft_zoom_in);  
   
-// }
-
-///////////////////////////////////////////////////////////////////////////////
-//Keyboard function 
-
-function access_keyboard(){
-  keyboard_bool = !keyboard_bool; 
-
-  if (keyboard_bool == true){
-    keyboard_button.style('background-color', '#4400ff');
-  }
-  else{
-    keyboard_button.style('background-color', '#ffffff');
-  }
+  fft_b_zoom_out = createButton("-"); 
+  fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 420); 
+  fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
+  fft_b_zoom_out.mousePressed(fft_zoom_out); 
 }
 
-///////////////////////////////////////////////////////////////////////////////
 //Oscillator Wave Settings 
-
 function sine_setting(){
   sine_bool = !sine_bool;
 
@@ -646,6 +609,121 @@ function square_setting(){
     square_button.style('background-color', '#ffffff');
     curr_wave = 'sine';
   }
+}
+
+//Frequency Adjuster option
+// function frequency_sliders() { 
+//   frequency_bool = !frequency_bool;
+
+//   if (frequency_bool == true) {
+//     frequency_button.style('background-color', '#4400ff');
+
+//     side_bar.redraw(); 
+//     //Frequency Sliders
+//     trebleslider = createSlider(0,15,curr_points[0]); 
+//     trebleslider.position(slide_x, last_button + 105); 
+
+//     midslider = createSlider(0,15,curr_points[1]); 
+//     midslider.position(slide_x, last_button + 85 ); 
+
+//     bassslider = createSlider(0,15,curr_points[2]); 
+//     bassslider.position(slide_x, last_button + 65); 
+      
+//   }
+//   else{
+//     frequency_button.style('background-color', '#ffffff');
+
+//     bassslider.hide(); 
+//     midslider.hide(); 
+//     trebleslider.hide();
+//     side_bar.clear(); 
+//     side_bar.redraw(); 
+//   }
+  
+// }
+
+///////////////////////////////////////////////////////////////////////////////
+
+//Keyboard function 
+function access_keyboard(){
+  keyboard_bool = !keyboard_bool; 
+
+  if (keyboard_bool == true){
+    keyboard_button.style('background-color', '#4400ff');
+
+    recreateKeys();
+
+    left_button = createDiv(" < "); 
+    left_button.style("piano_button_style");
+    left_button.mousePressed(keyboard_p5.move_left)
+
+    right_button = createDiv(" > "); 
+    right_button.style("piano_button_style"); 
+    right_button.mousePressed(keyboard_p5.move_right);  
+
+    keyboard_p5.resizeCanvas(windowWidth, windowHeight); 
+
+  }
+  else{
+    keyboard_button.style('background-color', '#ffffff');
+
+    for (i =0; i<= keyNums; i++){
+      white_keys[i].hide(); 
+    }
+
+    for (i=0; i<= sharp_flatNums +1; i++){
+      black_keys[i].hide(); 
+    }
+
+    keyboard_p5.clear(); 
+    left_button.hide(); 
+    right_button.hide(); 
+
+    keyboard_p5.resizeCanvas(0, 0); 
+  }
+}
+
+function clearKeys(){
+    for (i =0; i<= keyNums; i++){
+      white_keys[i].hide(); 
+    }
+
+    for (i=0; i<= sharp_flatNums +1; i++){
+      black_keys[i].hide(); 
+    }
+}
+
+
+function recreateKeys(){
+  for (i = 0; i<= keyNums; i++){ 
+      //white keys
+      fill(230,230,230); 
+      var label;
+      if (i == 0){
+        label = curr_octaves[0];
+      }
+      else if (i == 7){
+        label = curr_octaves[1];
+      }
+      else if (i == 14){
+        label = curr_octaves[2];
+      }
+      else{
+        label = " "; 
+      }
+      white_keys[i] = createDiv(label); 
+      white_keys[i].class("piano_white_key_style")
+      white_keys[i].mousePressed(playNote(i)); 
+    }
+
+  //black keys 
+  fill(0,0,0); 
+  for (i = 0; i<= sharp_flatNums+1; i++){
+    black_keys[i] = createDiv(" "); 
+    black_keys[i].class("piano_black_key_style")
+    black_keys[i].mousePressed(playFlat(i));
+  } 
+  
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -685,8 +763,6 @@ function toggleButton(idx) {
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
 //Dr Kim's audio toggle
 function restartMic() {
   if ( !micOn ) {
@@ -706,17 +782,7 @@ function restartMic() {
   }
 }
 
-function recreateButtons() { 
-  fft_b_zoom_in = createButton("+"); 
-  fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
-  fft_b_zoom_in.size(zoomButtonSize, zoomButtonSize);
-  fft_b_zoom_in.mousePressed(fft_zoom_in);  
-  
-  fft_b_zoom_out = createButton("-"); 
-  fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 420); 
-  fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
-  fft_b_zoom_out.mousePressed(fft_zoom_out); 
-}
+///////////////////////////////////////////////////////////////////////////////
 
 //OLD CODE 
 // function splitOctaves(spectrum, slicesPerOctave) {
