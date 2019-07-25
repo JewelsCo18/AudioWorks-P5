@@ -10,11 +10,21 @@ let fftSize = 1024;
 var spectra = [];
 let fftMaxScale = 4;		// Max scaling factor for fft (spectrum) plot
 							// NOTE: *Lower* scale factor is zoomed "out" (shows greater frequency range)
-var fftScale = 0; 			// Initial fft (spectrum) plot scaling factor: 0...3
+var fftScale = 1; 			// Initial fft (spectrum) plot scaling factor: 0...3
 let rightMargin = 75;
 let dotSpacing = 35;		// Spacing between zoom indicator dots
 let topMargin = 50;
 let zoomButtonSize = 50;	// Zoom buttons default dimensions
+var dot = false;
+var dot_x = 0;
+var dot_y = 0;
+var scrollSpectrum = false;
+var scrollStartX;
+var scrollStartY;
+var scrollCurX;
+var scrollCurY;
+var scrollOffset = 0;
+var textOffset = 0;
 
 //Mic Vars
 var top_zero = false; 
@@ -73,13 +83,13 @@ function setup() {
 	userStartAudio();
 
   //scroll 
-  window.scrollTo(0,20); 
-  window.scrollBy(0,20); 
+//  window.scrollTo(0,20); 
+//  window.scrollBy(0,20); 
 
 //	cnv = createCanvas(windowWidth/1.2, windowHeight/2);
 //  cnv = createCanvas(980 - (139), 400); 
 	cnv = createCanvas(windowWidth - 200, 400); 
-	cnv.position(200, 400); 
+	cnv.position(200, 368); 
 
 	fft_b_zoom_in = createButton("+"); 
 	fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
@@ -91,8 +101,9 @@ function setup() {
 	fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
 	fft_b_zoom_out.mousePressed(fft_zoom_out); 
 
-  mic = new p5.AudioIn(); 
+  	mic = new p5.AudioIn(); 
 	mic.start();
+	micOn = true;
 
 	fft = new p5.FFT(0.8, 1024);
 	fft.setInput(mic);
@@ -114,7 +125,9 @@ function setup() {
     oscillators[i].freq(440*i);
     oscillators[i].amp(0); 
   }
+  
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -167,8 +180,8 @@ function draw() {
   }
   
   //FFT
-	if (pause_fft == 0) {
-		speed = 10; 
+	if (1) {
+//		speed = 10; 
 
 		// Set parameters for drawing spectrum frames
 		if (waveScale == 1) {
@@ -188,6 +201,18 @@ function draw() {
 		} else {
 			s_inc = 1; 
 		}
+
+		if (scrollSpectrum) {
+			fftScaleBins = Math.pow(2,9-fftScale); // Number of spectrum points (bins) in plot at current fftScale
+			scrollOffset += round( fftScaleBins * (scrollStartX - scrollCurX)/width );
+			scrollOffset = max( min(scrollOffset, 512-fftScaleBins-1), 0);
+//			console.log(scrollOffset);
+		}
+		
+		if (fftScale == 0) {
+			scrollOffset = 0;
+		}
+
 		
 		// Loop to draw current and past spectrum frames
 		for (s=0; s<numSpectrumFrames; s += s_inc) {
@@ -204,22 +229,98 @@ function draw() {
 
 			// Compute the number of spectrum indexes for current fftScale factor
 			spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
-			
+						
 			for (i = 0; i < spectrumEdge ; i++) {
-				curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+				curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
 			}
 			endShape();
 		}
 
-    zoom_buttons(); 
+		drawFrequencyLabels();
+    	zoom_buttons(); 
 	}
 	else if (pause_fft == 1 && synthesis_bool == false){
 		speed = 0;
-    zoom_buttons(); 
+    	zoom_buttons(); 
 	}	
   else{
     speed = 1; 
   }
+  
+/*    if (dot) {
+  		fill(20);
+  		idx = round( dot_x * (512/width) / Math.pow(2,fftScale) );
+  		circle(dot_x, map(spectra[0][idx], 0, 255, height-150, 5), 20);
+  } */
+
+}
+
+
+function touchStarted() {
+	dot_x = mouseX;
+	dot_y = mouseY;
+	dot = true;
+
+	console.log(mouseX);
+	console.log(mouseY);
+	
+	if (mouseY > 300) {
+		// start scrolling
+		scrollSpectrum = true;
+		scrollStartX = mouseX;
+		scrollStartY = mouseY;
+		scrollCurX = mouseX;
+		scrollCutY = mouseY;
+	}	
+//	return false;
+}
+
+function touchMoved() {
+	if (scrollSpectrum) {
+		scrollStartX = scrollCurX;
+		scrollStartY = scrollCurY;
+		scrollCurX = mouseX;
+		scrollCurY = mouseY;
+	}
+}
+
+function touchEnded() {
+	if (scrollSpectrum) {
+		scrollSpectrum = false;
+	}
+}
+
+
+function drawFrequencyLabels() {
+	textAlign(CENTER);
+	fill(0);
+
+	if (scrollSpectrum) {
+		textOffset += scrollCurX - scrollStartX;
+		textOffset = max( min(textOffset, 0), -width*(Math.pow(2,fftScale)-1) );
+	}
+	if (fftScale == 0) {
+		textOffset = 0;
+	}
+
+
+	if (fftScale == 3) {
+		f_steps = 250;
+	} else if (fftScale > 1) {
+		f_steps = 500;
+	} else {
+		f_steps = 1000;
+	}
+	
+//	f_max = min(11000, 11025/Math.pow(2,fftScale) );
+	f_max = 11000;
+	
+	for (f=f_steps; f < f_max; f+= f_steps) {
+		this_x = width * f / 11025 * Math.pow(2,fftScale) + textOffset;
+		if ( (this_x >= 0) && (this_x < width) )  {
+			text(f, width * f / 11025 * Math.pow(2,fftScale) + textOffset, 350);
+		}
+	}
 }
 
 // Zoom in/out button functions
@@ -227,6 +328,10 @@ function fft_zoom_in() {
 		if (fftScale < fftMaxScale-1) {
 			fftScale += 1;
 		}
+		scrollOffset = 0;
+		textOffset = 0;
+//		scrollOffset *= 2;
+//		textOffset *= 2;
 //		console.log(fftScale);	// For debugging
 	}
 
@@ -234,6 +339,11 @@ function fft_zoom_out() {
 		if (fftScale > 0) {
 			fftScale -= 1; 
 		}
+
+		scrollOffset = 0;
+		textOffset = 0;
+//		scrollOffset = round(scrollOffset/2);
+//		textOffset = round(textOffset/2);
 //		console.log(fftScale);	// For debugging
 	}
 
@@ -244,11 +354,11 @@ function zoom_buttons(){
       if (idx == fftScale) {
         // Draw dot for the current fftScale selection bigger, plus a thicker stroke
         strokeWeight(4);
-        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin, 16);
+        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin+zoomButtonSize/2, 16);
       }
       else {
         strokeWeight(0);
-        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin, 10);
+        circle(windowWidth - 200 - rightMargin - dotSpacing*(fftMaxScale-idx), topMargin+zoomButtonSize/2, 10);
       }
     } 
 }
@@ -259,19 +369,20 @@ function zoom_buttons(){
 var side_bar = function(p) { 
 
   p.setup = function() {
-    var side_cnv = p.createCanvas(200, 800); 
+    var side_cnv = p.createCanvas(200, windowHeight); 
     side_cnv.position(0,0);
     p.noLoop();
 
     micButton = createDiv('Mic ON');
     micButton.class('subheader_style');
     micButton.mousePressed(restartMic);
-    micButton.position(10, 50); 
+    micButton.position(10, topMargin + 50); 
+    micButton.style('background-color', '#4400ff');
 
     sound_button = createDiv("Sound Recorder"); 
     sound_button.class('subheader_style'); 
     sound_button.mousePressed(sound_recorder); 
-    sound_button.position(10, 90); 
+    sound_button.position(10, topMargin + 100); 
 
     // frequency_button = createDiv("Frequency Adjuster"); 
     // frequency_button.class('subheader_style'); 
@@ -281,11 +392,11 @@ var side_bar = function(p) {
     synthesis_button = createDiv("Synthesizer"); 
     synthesis_button.class('subheader_style'); 
     synthesis_button.mousePressed(synthesizer); 
-    synthesis_button.position(10, 130);
+    synthesis_button.position(10, topMargin + 150);
 
     last_button = synthesis_button.y + synthesis_button.height; 
 
-    colour_button = createDiv("Colour Adjuster"); 
+    colour_button = createDiv("Colors"); 
     colour_button.class('subheader_style'); 
     colour_button.mousePressed(colour_adjustment); 
     colour_button.position(10, windowHeight-30); 
@@ -296,12 +407,12 @@ var side_bar = function(p) {
 
   p.draw = function() {
     p.fill(255,255,255); 
-    p.textFont('Baskerville');
+    p.textFont('Helvetica');
     var last_button = synthesis_button.y +synthesis_button.height/2; 
 
     //Headers
-    p.textSize(36); 
-    p.text('AudioWorks', header_x,35);
+    p.textSize(26); 
+    p.text('AudioWorks-P5', header_x, topMargin+25);
 
     //General Text Size 
     p.textSize(14);
@@ -650,6 +761,8 @@ function square_setting(){
 
 ///////////////////////////////////////////////////////////////////////////////
 
+
+
 //Dr. Kim's toggle button for Mic button 
 function toggleButton(idx) {
 
@@ -675,17 +788,50 @@ function toggleButton(idx) {
       buttonState[idx] = 2;
     }
     else if (buttonState[idx] === 2) {
-      mic.stop();
-      micOn = false;
-      micButton.style('background-color','#888888');
-      micButton.html("Mic OFF"); 
+		stopMic();
+
+      buttons[idx].html('Pause sound '+idx);
+      buttons[idx].style('background-color','#cccccc');
+		buttonState[idx] = 3;
+
       fft.setInput(soundFile[idx]);
-      soundFile[idx].play(); // play the result!    
+      soundFile[idx].onended( donePlaying(idx) );    
+      soundFile[idx].play(); // play the result!
+    }
+    else if (buttonState[idx] == 3) {
+		stopMic();
+
+      buttons[idx].html('Play sound '+idx);
+      buttons[idx].style('background-color','#00cc00');
+		buttonState[idx] = 2;
+
+      fft.setInput(soundFile[idx]);
+      soundFile[idx].pause(); // play the result!    
+    
+    
     }
   }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
+function donePlaying(idx) {
+
+	return function() {
+		buttons[idx].html('Play sound '+idx);
+		buttons[idx].style('background-color','#00cc00');
+		buttonState[idx] = 2;
+	}
+}
+
+function stopMic() {
+	if (micOn) {
+		mic.stop();
+		micOn = false;
+		micButton.style('background-color','#888888');
+		micButton.html("Mic OFF");       
+	}
+}
 
 //Dr Kim's audio toggle
 function restartMic() {
@@ -701,6 +847,7 @@ function restartMic() {
     pause_wave = 1;
     pause_fft = 1; 
     micOn = false;
+    mic.stop();
     micButton.html('Mic OFF');
     micButton.style('background-color', '#ffffff');
   }
