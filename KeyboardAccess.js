@@ -28,7 +28,7 @@ var keyboard_sketch = function(p){
 			}
 			white_keys[i] = createDiv(label); 
 			white_keys[i].class("piano_white_key_style")
-			white_keys[i].style('background', 'transparent'); 
+			white_keys[i].style('background', 'transparent');
 			white_keys[i].mousePressed(playNote(i)); 
 		}
 
@@ -37,7 +37,7 @@ var keyboard_sketch = function(p){
 		for (i = 0; i<= sharp_flatNums+1; i++){
 			black_keys[i] = createDiv(" "); 
 			black_keys[i].class("piano_black_key_style")
-			black_keys[i].style('background', 'transparent'); 
+			black_keys[i].style('background', 'transparent');   
 			black_keys[i].mousePressed(playFlat(i));
 		} 
 
