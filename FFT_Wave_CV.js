@@ -1,7 +1,7 @@
 //IPAD SCREEN SIZE 
 //createCanvas(980, 800); 
 
-var mic, fft, cnv, input, points, backgroundColorPicker, note, initial_x, initial_y, curr_recorded_sound;
+var mic, fft, cnv, input, points;
 
 //Spectrum Vars
 var divisions = 5;
@@ -49,7 +49,7 @@ var start_pos;
 var waveScale = 3;      // Initial wave plot scaling factor (power of 2, i.e., 2^3 = 8x)
               // NOTE: higher scale factor is zooming "out", lower is zooming "in"
 //Button vars
-var header_x = 10;
+var header_x = 15;
 var slide_x = 15;  
 var descriptor_x = 160;
 var frequency_bool = false; 
@@ -60,6 +60,7 @@ var last_button;
 var colour_button_pos; 
 
 //synthesis Vars
+var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start; 
 var sliderNums = 17;//starting from 1 not 0 
 var sliders = [];
 var slider_vals = [];  
@@ -67,9 +68,6 @@ var oscillators = [];
 var curr_fft = 440;  
 var curr_frequency_text;
 var curr_wave = 'sine'; 
-var sine_bool = true; 
-var square_bool = false; 
-var saw_bool = false; 
 var keyboard_bool = false;
 
 //Colour Vars; 
@@ -80,8 +78,8 @@ var string_colors = "rgb(255,119,0)";
 //Keyboard Vars; 
 var move_y = 30; 
 var moveable = false; 
-var keyNums = 16 //starting at A4
-var sharp_flatNums = 10 //starting at A4
+var keyNums = 16 //starting at A3
+var sharp_flatNums = 10 //starting at A3
 var white_key_pos = 230; 
 var black_key_pos = 255;
 var octave_start = 3; 
@@ -118,9 +116,6 @@ function setup() {
   mic = new p5.AudioIn(); 
   mic.start();
   micOn = true;
-
-  micOn = true;
-
 
   fft = new p5.FFT(0.8, 1024);
   fft.setInput(mic);
@@ -183,10 +178,13 @@ function draw() {
     curr_fft = overall_frequency_slider.value(); 
     for (i = 1; i <= sliderNums; i++) {
       oscillators[i].freq(curr_fft*i);
-      oscillators[i].amp(sliders[i].value()); 
+      oscillators[i].amp(sliders[i].value()*output_slider.value()); 
       oscillators[i].setType(curr_wave); 
       sliders[i].style('background-color', string_colors); 
       overall_frequency_slider.style('background-color', string_colors);
+      input_slider.style('background-color', string_colors); 
+      output_slider.style('background-color', string_colors); 
+      wave_button.style('background-image', "url("+curr_wave+"_icon.png)"); 
     } 
   }
   
@@ -272,8 +270,8 @@ function touchStarted() {
   dot_y = mouseY;
   dot = true;
 
-  console.log(mouseX);
-  console.log(mouseY);
+  // console.log(mouseX);
+  // console.log(mouseY);
   
   if (mouseY > 300) {
     // start scrolling
@@ -388,12 +386,12 @@ var side_bar = function(p) {
     micButton.class('subheader_style');
     micButton.style('background-color', '#4400FF');
     micButton.mousePressed(restartMic);
-    micButton.position(10, 50); 
+    micButton.position(header_x, 50); 
 
     sound_button = createDiv("Sound Recorder"); 
     sound_button.class('subheader_style'); 
     sound_button.mousePressed(sound_recorder); 
-    sound_button.position(10, 90); 
+    sound_button.position(header_x, 90); 
 
     // frequency_button = createDiv("Frequency Adjuster"); 
     // frequency_button.class('subheader_style'); 
@@ -403,16 +401,16 @@ var side_bar = function(p) {
     synthesis_button = createDiv("Synthesizer"); 
     synthesis_button.class('subheader_style'); 
     synthesis_button.mousePressed(synthesizer); 
-    synthesis_button.position(10, 130);
+    synthesis_button.position(header_x, 130);
 
     last_button = synthesis_button.y + synthesis_button.height; 
 
     colour_button = createDiv("Colour Adjuster"); 
     colour_button.class('subheader_style'); 
     colour_button.mousePressed(colour_adjustment); 
-    colour_button.position(10, windowHeight-30); 
+    colour_button.position(header_x, windowHeight-10); 
 
-    colour_button_pos = windowHeight-30-colour_button.height
+    colour_button_pos = windowHeight-10-colour_button.height
     
   }
 
@@ -447,7 +445,7 @@ var side_bar = function(p) {
     
     if (colour_bool == true) {
       //colour picker description
-      p.text("Change line/background color", header_x, colour_button_pos - 210); 
+      //p.text("Change line/background color", header_x, colour_button_pos - 210); 
 
       //colour slider descriptions
       p.text("Line Color", header_x, colour_button_pos - 185); 
@@ -462,7 +460,11 @@ var side_bar = function(p) {
     }
     
     if (synthesis_bool == true) { 
-      p.text("Synthesize your own sound", header_x, last_button + 45); 
+      p.text("Synthesize your own sound", header_x, last_button + 45);
+      p.text("Fundamental", header_x, synthesis_slider_start + 45);
+      p.text("Frequency:", header_x, synthesis_slider_start + 60); 
+      p.text("Input:", header_x, synthesis_slider_start + 115); 
+      p.text("Output:", header_x, synthesis_slider_start+170);   
     }
   }
 }
@@ -485,23 +487,7 @@ function sound_recorder() {
   if (synthesis_bool == true){
     synthesis_button.style('background-color', '#ffffff');
     synthesis_bool = false; 
-
-    side_bar.clear(); 
-    side_bar.redraw();
-    recreateButtons();  
-
-    pause_fft = 0; 
-    fft.setInput(mic); 
-    keyboard_button.hide();
-    sine_button.hide(); 
-    saw_button.hide(); 
-    square_button.hide();  
-
-    overall_frequency_slider.hide(); 
-    for (i = 1; i < sliderNums+1; i++) { 
-      sliders[i].hide(); 
-      oscillators[i].stop(); 
-    } 
+    hide_synthesis(); 
   }
 
   if (sound_bool == true) {
@@ -535,12 +521,6 @@ function sound_recorder() {
 
 function colour_adjustment() { 
   colour_bool = !colour_bool;
-
-  if (sound_bool == true){
-    for (i = 0; i<=NumButtons; i++){ //11 is most amount of numButtons
-      buttons[i].hide(); 
-    }
-  }
 
   if (colour_bool == true) {
     colour_button.style('background-color', '#4400ff');
@@ -624,16 +604,6 @@ function synthesizer() {
   if (synthesis_bool == true) { 
     synthesis_button.style('background-color', '#4400ff');
 
-    side_bar.clear();
-    side_bar.redraw(); 
-    fft_b_zoom_in.hide(); 
-    fft_b_zoom_out.hide(); 
-    
-    overall_frequency_slider = createSlider(0,1000,440); 
-    overall_frequency_slider.size((windowWidth-200)/1.25); 
-    overall_frequency_slider.position(95+ (windowWidth-200)/5, 430); 
-    overall_frequency_slider.style('background-color', string_colors); 
-
     var slider_pos = (windowWidth-200)/sliderNums-1
     for (i=1; i<sliderNums+1; i++) {
       sliders[i] = createSlider(0,1,0,0.01); 
@@ -645,50 +615,110 @@ function synthesizer() {
       slider_pos += (windowWidth-200)/sliderNums-1;
     }
 
-    keyboard_button = createDiv("Keyboard ON"); 
-    keyboard_button.class("button_style"); 
+    keyboard_button = createDiv(" "); 
+    keyboard_button.class("keyboard_style"); 
     keyboard_button.mousePressed(access_keyboard); 
-    keyboard_button.position(header_x, last_button + recording_adjustment);
+    keyboard_button.position(header_x + 20, last_button + recording_adjustment);
 
-    sine_button = createDiv("Sine"); 
-    sine_button.class("button_style");
-    sine_button.style('background-color', '#4400ff'); 
-    sine_button.mousePressed(sine_setting); 
-    sine_button.position(header_x, last_button + recording_adjustment + 40);
+    wave_button = createDiv(" "); 
+    wave_button.class("waveType_style"); 
+    wave_button.mousePressed(set_waveType('sine')); 
+    wave_button.position(header_x + 100, last_button + recording_adjustment); 
 
-    saw_button = createDiv("Sawtooth"); 
-    saw_button.class("button_style"); 
-    saw_button.mousePressed(saw_setting); 
-    saw_button.position(header_x, last_button + recording_adjustment + 80);
+    icon_end = last_button + recording_adjustment + 50; //50 is how large the icon currently is 
 
-    square_button = createDiv("Square"); 
-    square_button.class("button_style");
-    square_button.mousePressed(square_setting);  
-    square_button.position(header_x, last_button + recording_adjustment + 120);
+    draw_wave_button = createDiv("Draw Waveform"); 
+    draw_wave_button.class("button_style"); 
+    draw_wave_button.mousePressed(wave_drawing); 
+    draw_wave_button.position(header_x, icon_end + 15); 
+
+    draw_envelope_button = createDiv("Draw Envelope"); 
+    draw_envelope_button.class("button_style"); 
+    draw_envelope_button.mousePressed(envelope_drawing); 
+    draw_envelope_button.position(header_x, icon_end + 55); 
+
+    preset1_button = createDiv("Preset 1"); 
+    preset1_button.class("button_style"); 
+    preset1_button.mousePressed(set_preset1); 
+    preset1_button.position(header_x, icon_end + 95);
+
+    preset2_button = createDiv("Preset 2"); 
+    preset2_button.class("button_style"); 
+    preset2_button.mousePressed(set_preset2); 
+    preset2_button.position(header_x, icon_end + 135);  
+
+    synthesis_slider_start = preset2_button.y+ preset2_button.height; 
+
+    frequency_input = createInput(""); 
+    frequency_input.size(70); 
+    frequency_input.position(header_x + 100, synthesis_slider_start+33); 
+    frequency_input.style("height", "20px"); 
+    frequency_input.input(frequency_change); 
+
+    overall_frequency_slider = createSlider(0,1000,curr_fft); 
+    overall_frequency_slider.position(header_x, synthesis_slider_start + 65); 
+    overall_frequency_slider.style('background-color', string_colors);
+
+    input_slider = createSlider(0,10,0); 
+    input_slider.position(header_x, synthesis_slider_start + 120); 
+    input_slider.style('background-color', string_colors); 
+
+    input_slider_input = createInput(""); 
+    input_slider_input.size(70); 
+    input_slider_input.position(header_x +100, synthesis_slider_start +100); 
+    input_slider_input.input(input_change); 
+
+    output_slider = createSlider(1,10,1); 
+    output_slider.position(header_x, synthesis_slider_start+175); 
+    output_slider.style('background-color', string_colors);
+
+    output_slider_input = createInput(""); 
+    output_slider_input.size(70); 
+    output_slider_input.position(header_x +100, synthesis_slider_start + 155); 
+    output_slider_input.input(output_change);  
+
+    side_bar.clear();
+    side_bar.redraw(); 
   }
 
   else{ 
     synthesis_button.style('background-color', '#ffffff');
 
     fft.setInput(mic); 
+    hide_synthesis(); 
 
-    keyboard_button.hide();
-    sine_button.hide(); 
-    saw_button.hide(); 
-    square_button.hide();  
-
-    side_bar.clear(); 
-    side_bar.redraw();
-    recreateButtons();  
-
-    overall_frequency_slider.hide(); 
-    for (i = 1; i < sliderNums+1; i++) { 
-      sliders[i].hide(); 
-      oscillators[i].stop(); 
-    }
   }
 }
 
+function hide_synthesis(){
+  keyboard_button.hide();
+  wave_button.hide(); 
+  draw_envelope_button.hide(); 
+  draw_wave_button.hide(); 
+  preset1_button.hide(); 
+  preset2_button.hide(); 
+
+  side_bar.clear(); 
+  side_bar.redraw();
+  recreateButtons();  
+
+  overall_frequency_slider.hide(); 
+  frequency_input.hide();
+  input_slider.hide();
+  input_slider_input.hide(); 
+  output_slider.hide(); 
+  output_slider_input.hide(); 
+
+  for (i = 1; i < sliderNums+1; i++) { 
+    sliders[i].hide(); 
+    oscillators[i].stop(); 
+  }
+
+  if (curr_recorded_sound!= null){
+    buttons[curr_recorded_sound].hide(); 
+  }
+}
+  
 function recreateButtons() { 
   fft_b_zoom_in = createButton("+"); 
   fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
@@ -701,42 +731,59 @@ function recreateButtons() {
   fft_b_zoom_out.mousePressed(fft_zoom_out); 
 }
 
+function frequency_change(){ 
+  overall_frequency_slider.value(frequency_input.value()); 
+}
+
+function input_change(){
+  input_slider.value(input_slider_input.value()); 
+}
+
+function output_change(){
+  output_slider.value(output_slider_input.value()); 
+}
+
 //Oscillator Wave Settings 
-function sine_setting(){
-  sine_bool = !sine_bool;
+function set_waveType(change_wave) {
 
-  if (sine_bool == true) {
-    sine_button.style('background-color', '#4400ff');
-    curr_wave = 'sine';
+  return function() {
+
+    // make sure user enabled the mic
+    if (change_wave === 'sine') {
+      curr_wave = 'square';
+      change_wave = 'square';//this is so that the toggle keeps on moving 
+      print("1"); 
+    }
+    else if (change_wave === 'square') {  
+      curr_wave = 'sawtooth';
+      change_wave = 'saw';
+      print("2"); 
+    }
+    else if (change_wave === 'saw') {
+      curr_wave = 'sine';
+      change_wave = 'sine';
+      print("3");
+    }
   }
-  else{
-    sine_button.style('background-color', '#ffffff'); 
-  }
-  
 }
 
-function saw_setting(){
-  saw_bool = !saw_bool
-  if (saw_bool == true) {
-    saw_button.style('background-color', '#4400ff');
-    curr_wave = 'sawtooth';
-  }
-  else{
-    saw_button.style('background-color', '#ffffff');
-    curr_wave = 'sine'; 
-  }
+function wave_drawing(){
+
 }
 
-function square_setting(){
-  square_bool = !square_bool; 
-  if (square_bool == true) {
-    square_button.style('background-color', '#4400ff');
-    curr_wave = 'square';
-  }
-  else{
-    square_button.style('background-color', '#ffffff');
-    curr_wave = 'sine';
-  }
+function envelope_drawing(){
+
+
+}
+
+function set_preset1(){
+
+
+}
+
+function set_preset2(){
+
+
 }
 
 //Frequency Adjuster option
@@ -781,19 +828,21 @@ function access_keyboard(){
 
     recreateKeys();
 
+    left_button = createDiv(" < "); 
+    left_button.style("piano_button_style");
+    left_button.mousePressed(keyboard_p5.move_left)
+
+    right_button = createDiv(" > "); 
+    right_button.style("piano_button_style"); 
+    right_button.mousePressed(keyboard_p5.move_right);  
+
     keyboard_p5.resizeCanvas(windowWidth, windowHeight); 
 
   }
   else{
     keyboard_button.style('background-color', '#ffffff');
 
-    for (i =0; i<= keyNums; i++){
-      white_keys[i].hide(); 
-    }
-
-    for (i=0; i<= sharp_flatNums +1; i++){
-      black_keys[i].hide(); 
-    }
+    clearKeys(); 
 
     keyboard_p5.clear(); 
     left_button.hide(); 
@@ -804,25 +853,16 @@ function access_keyboard(){
 }
 
 function clearKeys(){
-    for (i =0; i<= keyNums; i++){
-      white_keys[i].hide(); 
-    }
+  for (i =0; i<= keyNums; i++){
+    white_keys[i].hide(); 
+  }
 
-    for (i=0; i<= sharp_flatNums +1; i++){
-      black_keys[i].hide(); 
-    }
+  for (i=0; i<= sharp_flatNums +1; i++){
+    black_keys[i].hide(); 
+  }
 }
 
-
 function recreateKeys(){
-  // left_button = createDiv("<<"); 
-  // left_button.style("piano_button_style");
-  // left_button.mousePressed(keyboard_p5.move_left)
-
-  // right_button = createDiv(">>"); 
-  // right_button.style("piano_button_style"); 
-  // right_button.mousePressed(keyboard_p5.move_right);  
-
   var whiteWidth = (windowWidth-200)/keyNums;
   var blackWidth = whiteWidth/2;
   for (i = 0; i<= keyNums; i++){ 
@@ -891,11 +931,11 @@ function toggleButton(idx) {
       buttons[idx].style('background-color','#cccccc');
       buttonState[idx] = 3;
 
+      curr_recorded_sound = idx; 
+
       fft.setInput(soundFile[idx]);
       soundFile[idx].onended( donePlaying(idx) );    
       soundFile[idx].play(); // play the result!
-
-      curr_recorded_sound = idx; 
 
     }
     else if (buttonState[idx] == 3) {
@@ -907,7 +947,6 @@ function toggleButton(idx) {
 
       fft.setInput(soundFile[idx]);
       soundFile[idx].pause(); // play the result!    
-    
     
     }
   }
@@ -930,7 +969,6 @@ function stopMic() {
     micButton.html("Mic OFF");       
   }
 }
-
 
 //Dr Kim's audio toggle
 function restartMic() {

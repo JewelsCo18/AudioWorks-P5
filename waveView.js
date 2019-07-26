@@ -20,6 +20,7 @@ var o_sketch = function(p) {
 	p.maxScale = 6;		// Maximum wave plot scaling factor (power of 2, i.e., 2^6 = 64x)
 	p.dot = false;
 	p.drawWave = [];
+	// p.drawEnvelope = [];
 
 /* The following are defined in master js file (FFT_Wave_CV.js)
 	waveScale = 3;		// Initial wave plot scaling factor (power of 2, i.e., 2^3 = 8x)
