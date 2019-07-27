@@ -20,7 +20,7 @@ var o_sketch = function(p) {
 	p.maxScale = 6;		// Maximum wave plot scaling factor (power of 2, i.e., 2^6 = 64x)
 	p.dot = false;
 	p.drawWave = [];
-	// p.drawEnvelope = [];
+	p.drawEnvelope = [];
 
 /* The following are defined in master js file (FFT_Wave_CV.js)
 	waveScale = 3;		// Initial wave plot scaling factor (power of 2, i.e., 2^3 = 8x)
@@ -128,13 +128,20 @@ var o_sketch = function(p) {
 
 //				idx = round( dot_x * (512/width) / Math.pow(2,fftScale) );
 //				circle(dot_x, map(p.wave[start_idx + start_pos * Math.pow(2,waveScale) ], 0, 1, 200, 100), 20);
-
 				p.beginShape();
 
 				for (i = 0; i < p.drawWave.length; i++ ) {
 					vertex(p.drawWave[i][0], p.drawWave[i][1]);
 				}
 				p.endShape();
+
+				p.beginShape();
+
+				for (i = 0; i < p.drawEnvelope.length; i++ ) {
+					vertex(p.drawEnvelope[i][0], p.drawEnvelope[i][1]);
+				}
+				p.endShape();
+				
 //			}
 		} 
     }  
@@ -157,15 +164,28 @@ var o_sketch = function(p) {
 	p.touchStarted = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 368; // Because this canvas is offset -368 from "main" (spectrum) canvas
-		p.drawWave = [];
-		p.drawWave.push([p.dot_x,p.dot_y]);
+
+		if (waveform_bool == true){
+			p.drawWave = [];
+			//p.drawWave.push([p.dot_x,p.dot_y]);
+		}
+		if (envelope_bool == true){
+			//p.drawEnvelope.push([p.dot_x,p.dot_y]);
+			p.drawEnvelope = [];
+		}
+
 		p.dot = true;
 	}
 	
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 368; // Because this canvas is offset -368 from "main" (spectrum) canvas		
-		p.drawWave.push([p.dot_x,p.dot_y]);
+		if (waveform_bool == true){
+			p.drawWave.push([p.dot_x,p.dot_y]);
+		}
+		if (envelope_bool == true){
+			p.drawEnvelope.push([p.dot_x,p.dot_y]);
+		}
 	}
 
 	p.touchEnded = function() {

@@ -60,15 +60,17 @@ var last_button;
 var colour_button_pos; 
 
 //synthesis Vars
-var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start; 
+var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start, slider_pos; 
 var sliderNums = 17;//starting from 1 not 0 
 var sliders = [];
 var slider_vals = [];  
 var oscillators = [];
-var curr_fft = 440;  
+var curr_fft = 440; 
 var curr_frequency_text;
 var curr_wave = 'sine'; 
 var keyboard_bool = false;
+var waveform_bool = false; 
+var envelope_bool = false; 
 
 //Colour Vars; 
 var curr_stroke = [255,119,0]; //rgb
@@ -176,6 +178,8 @@ function draw() {
   //synthesis 
   if (synthesis_bool == true){
     curr_fft = overall_frequency_slider.value(); 
+    recreateSliders(); 
+
     for (i = 1; i <= sliderNums; i++) {
       oscillators[i].freq(curr_fft*i);
       oscillators[i].amp(sliders[i].value()*output_slider.value()); 
@@ -185,6 +189,7 @@ function draw() {
       input_slider.style('background-color', string_colors); 
       output_slider.style('background-color', string_colors); 
       wave_button.style('background-image', "url("+curr_wave+"_icon.png)"); 
+      mic.amp(input_slider.value()); 
     } 
   }
   
@@ -339,6 +344,7 @@ function fft_zoom_in() {
     }
     scrollOffset = 0;
     textOffset = 0;
+    recreateSliders(); 
 //    scrollOffset *= 2;
 //    textOffset *= 2;
 //    console.log(fftScale);  // For debugging
@@ -351,6 +357,7 @@ function fft_zoom_out() {
 
     scrollOffset = 0;
     textOffset = 0;
+    recreateSliders(); 
 //    scrollOffset = round(scrollOffset/2);
 //    textOffset = round(textOffset/2);
 //    console.log(fftScale);  // For debugging
@@ -527,6 +534,10 @@ function colour_adjustment() {
 
     side_bar.redraw(); 
 
+    default_button = createButton("Default"); 
+    default_button.position(header_x + 100, colour_button_pos - 200); 
+    default_button.mousePressed(default_setting); 
+
     //Stroke Sliders
     rline_slide = createSlider(0, 255, curr_stroke[0],1); 
     rline_slide.position(slide_x, colour_button_pos - 180); 
@@ -556,6 +567,8 @@ function colour_adjustment() {
   else{
     colour_button.style('background-color', '#ffffff');
 
+    default_button.hide(); 
+
     rline_slide.hide(); 
     gline_slide.hide(); 
     bline_slide.hide(); 
@@ -568,6 +581,19 @@ function colour_adjustment() {
     side_bar.redraw();  
 
   }
+}
+
+function default_setting(){
+  var default_stroke = [255,119,0]; //default stroke setting
+  var default_background = [255,255,255]; //default background setting 
+  
+  rline_slide.value(default_stroke[0]); 
+  gline_slide.value(default_stroke[1]); 
+  bline_slide.value(default_stroke[2]); 
+
+  red_slide.value(default_background[0]); 
+  green_slide.value(default_background[1]); 
+  blue_slide.value(default_background[2]); 
 }
 
 function synthesizer() {
@@ -604,15 +630,20 @@ function synthesizer() {
   if (synthesis_bool == true) { 
     synthesis_button.style('background-color', '#4400ff');
 
-    var slider_pos = (windowWidth-200)/sliderNums-1
     for (i=1; i<sliderNums+1; i++) {
+      slider_pos = (curr_fft*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512);  
+      print(slider_pos); 
       sliders[i] = createSlider(0,1,0,0.01); 
+      sliders[i].position(slider_pos, 575); 
+      if (slider_pos<= windowWidth-200 || slider_pos >= windowWidth){
+        sliders[i].style('background-color', 'transparent')
+      }
+      else{
+        sliders[i].style('background-color', string_colors); 
+      }
       sliders[i].size(225);
       sliders[i].style('transform', 'rotate(-90deg'); 
-      sliders[i].position(80 + slider_pos, 575);  
-      sliders[i].style('background-color', string_colors); 
-      oscillators[i].start();  
-      slider_pos += (windowWidth-200)/sliderNums-1;
+      oscillators[i].start(); 
     }
 
     keyboard_button = createDiv(" "); 
@@ -659,7 +690,7 @@ function synthesizer() {
     overall_frequency_slider.position(header_x, synthesis_slider_start + 65); 
     overall_frequency_slider.style('background-color', string_colors);
 
-    input_slider = createSlider(0,10,0); 
+    input_slider = createSlider(0,10,1,0.1); 
     input_slider.position(header_x, synthesis_slider_start + 120); 
     input_slider.style('background-color', string_colors); 
 
@@ -668,7 +699,7 @@ function synthesizer() {
     input_slider_input.position(header_x +100, synthesis_slider_start +100); 
     input_slider_input.input(input_change); 
 
-    output_slider = createSlider(1,10,1); 
+    output_slider = createSlider(0,10,0,0.1); 
     output_slider.position(header_x, synthesis_slider_start+175); 
     output_slider.style('background-color', string_colors);
 
@@ -687,6 +718,28 @@ function synthesizer() {
     fft.setInput(mic); 
     hide_synthesis(); 
 
+  }
+}
+
+function recreateSliders(){
+
+  for (i = 1; i<sliderNums+1; i++){
+    sliders[i].hide(); 
+  }
+
+  for (i=1; i<sliderNums+1; i++) {
+      slider_pos = (curr_fft*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512);
+      sliders[i] = createSlider(0,1,0,0.01); 
+      sliders[i].position(slider_pos, 575); 
+      if (slider_pos<= 50 || slider_pos >= 1280){
+        sliders[i].style('background-color', 'transparent')
+        print("transparent"); //for some reason I can't remove the back 
+      }
+      else{
+        sliders[i].style('background-color', string_colors); 
+      }
+      sliders[i].size(225);
+      sliders[i].style('transform', 'rotate(-90deg'); 
   }
 }
 
@@ -768,11 +821,38 @@ function set_waveType(change_wave) {
 }
 
 function wave_drawing(){
+  waveform_bool = !waveform_bool; 
+
+  if (envelope_bool == true){
+    envelope_bool == false; 
+    draw_envelope_button.style('background-color', '#ffffff');
+    
+  }
+
+  if (waveform_bool == true){
+    draw_wave_button.style('background-color', '#4400ff');
+
+  }
+  else{
+    draw_wave_button.style('background-color', '#ffffff');
+  }
 
 }
 
 function envelope_drawing(){
+  envelope_bool = !envelope_bool; 
+  if (waveform_bool == true){
+    draw_wave_button.style('background-color', '#ffffff');
+    waveform_bool == false; 
 
+  }
+
+  if (envelope_bool == true){
+    draw_envelope_button.style('background-color', '#4400ff');
+  }
+  else{
+    draw_envelope_button.style('background-color', '#ffffff');
+  }
 
 }
 
