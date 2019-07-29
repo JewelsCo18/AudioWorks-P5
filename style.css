@@ -4,6 +4,10 @@ html, body {
   position: fixed;
 }
 
+body.noScroll {
+  overflow: hidden;
+}
+
 canvas {
   display: block;
 }
@@ -59,7 +63,23 @@ canvas {
 	cursor: pointer;
 }
 
-.piano_button_style {
+.keyboard_style{
+	background-image: url("piano_icon.png");
+	background-size: 50px 50px;
+	background-color: white; 
+	width: 50px; 
+	height: 50px; 
+}
+
+.waveType_style{
+	background-image: url("sine_icon.png"); 
+	background-color: white; 
+	background-size: 50px 50px; 
+	width:50px; 
+	height:50px;
+}
+
+.piano_button_style { /*NOT WORKING FOR SOME REASON*/
 	background-color: white;
 	height: 200px;
 	width: 200px;
