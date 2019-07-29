@@ -210,7 +210,8 @@ var o_sketch = function(p) {
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas		
-		if (waveform_bool == true){
+		
+    if (waveform_bool == true){
 			p.drawWave.push([p.dot_x,p.dot_y]);
 		}
 		if (envelope_bool == true){

@@ -4,42 +4,11 @@ var keyboard_sketch = function(p){
 
 	p.setup = function() {
 		cnv = p.createCanvas(0, 0);
-		cnv.position(0,0); 
+		cnv.position(0,0);
 
 		note = new p5.TriOsc(); 
 		note.start(); 
 		note.amp(0);
-
-		for (i = 0; i<= keyNums; i++){ 
-			//white keys
-			p.fill(230,230,230); 
-			var label;
-			if (i == 0){
-				label = curr_octaves[0];
-			}
-			else if (i == 7){
-				label = curr_octaves[1];
-			}
-			else if (i == 14){
-				label = curr_octaves[2];
-			}
-			else{
-				label = " "; 
-			}
-			white_keys[i] = createDiv(label); 
-			white_keys[i].class("piano_white_key_style")
-			white_keys[i].style('background', 'transparent');
-			white_keys[i].mousePressed(playNote(i)); 
-		}
-
-		//black keys 
-		p.fill(0,0,0); 
-		for (i = 0; i<= sharp_flatNums+1; i++){
-			black_keys[i] = createDiv(" "); 
-			black_keys[i].class("piano_black_key_style")
-			black_keys[i].style('background', 'transparent');   
-			black_keys[i].mousePressed(playFlat(i));
-		} 
 
 	}
 
@@ -51,16 +20,8 @@ var keyboard_sketch = function(p){
 			p.fill(68,0,255);
 			p.rect(230,move_y,windowWidth - 200, 50);
 
-			// left_button = createDiv("<<"); 
-		 //    left_button.style("piano_button_style");
-		 //    left_button.mousePressed(keyboard_p5.move_left)
-
-		 //    right_button = createDiv(">>"); 
-		 //    right_button.style("piano_button_style"); 
-		 //    right_button.mousePressed(keyboard_p5.move_right); 
-
-			left_button.position((windowWidth/3.5), move_y+7); 
-			right_button.position((windowWidth/1.05), move_y+7);
+			left_button.position((windowWidth/3.5), move_y+7);  //FIX THIS 
+			right_button.position((windowWidth/1.05), move_y+7); //FIX THIS 
 
 			for (i = 0; i<= keyNums; i++){ 
 				//white keys
