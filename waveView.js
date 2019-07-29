@@ -11,7 +11,7 @@ var o_sketch = function(p) {
 //	p.trigger;			// Not used
 //	p.working = true; 	// Not used
 	p.rightMargin = 75;	// Margin from right edge of canvas for interface elements
-	p.topMargin = 50;	// Margin from top for interface elements
+	p.topMargin = 45;	// Margin from top for interface elements
 	p.buttonSize = 50;	// Size of zoom buttons
 	p.buttonSpacing=25;	// Spacing between zoom indicators	
 	var o_cnv;			// Canvas for this view
@@ -30,7 +30,7 @@ var o_sketch = function(p) {
 
 	p.setup = function() {
 //		o_cnv = p.createCanvas(980 - (139), 400);
-		o_cnv = p.createCanvas(windowWidth - 200, 400);
+		o_cnv = p.createCanvas(windowWidth - 200, 300);
 		o_cnv.position(200,0); 
 		p.loop(); 
 
@@ -67,7 +67,21 @@ var o_sketch = function(p) {
 
 	//      var wave = p.fft.waveform();	// not needed, use fft.waveform()
 			p.wave = p.wave.concat(fft.waveform());
+				// There's no guarantee that successive frames are contiguous (possible dropouts)
+				// Probably want to fix this, at least for synthesis
 			p.wave.splice(0,1024);
+						
+			if (synthesis_bool) {
+				//p.scaleFactor = 0.5 / synthGainFudgeFactor;
+				if (wavedraw_mode) {
+					p.scaleFactor = wavedraw_scale;
+				} else {
+					p.scaleFactor = 1;
+				}
+			} else {
+				p.scaleFactor = 1;
+			}
+				
 
 			if (waveScale < 4) {
 				// At lower zoom levels (zoom in), just plot the wave
@@ -80,7 +94,7 @@ var o_sketch = function(p) {
 //				console.log(start_idx);		// For debugging
 			
 				for (start_pos = 0; start_pos < p.fftBins; start_pos++) {
-					vertex(start_pos + move_position, map(p.wave[start_idx + start_pos * Math.pow(2,waveScale) ], 0, 1, 200, 100));
+					vertex(start_pos + move_position, map(p.scaleFactor * p.wave[start_idx + start_pos * Math.pow(2,waveScale) ], -1, 1, 300, 100));
 				}
 				p.endShape();
 			}
@@ -127,6 +141,7 @@ var o_sketch = function(p) {
 
 //				idx = round( dot_x * (512/width) / Math.pow(2,fftScale) );
 //				circle(dot_x, map(p.wave[start_idx + start_pos * Math.pow(2,waveScale) ], 0, 1, 200, 100), 20);
+<<<<<<< Updated upstream
 
 				p.beginShape();
 
@@ -134,6 +149,35 @@ var o_sketch = function(p) {
 					vertex(p.drawWave[i][0], p.drawWave[i][1]);
 				}
 				p.endShape();
+=======
+
+			if (wavedraw_mode) {
+
+				if (waveform_bool) {
+					p.beginShape();
+					for (i = 0; i < p.drawWave.length; i++ ) {
+						curveVertex(p.drawWave[i][0], p.drawWave[i][1]);
+					}
+					p.endShape();
+				}
+				else if (y_wave.length > 0){
+					p.stroke(255,0,0);
+					p.beginShape();
+					for (i = 0; i < y_wave.length; i++ ) {
+						vertex(width * i/y_wave.length, -100*(y_wave[i]*wavedraw_scale) + 200 );
+					}			
+					p.endShape();
+				}
+			}
+			
+				p.beginShape();
+
+				for (i = 0; i < p.drawEnvelope.length; i++ ) {
+					vertex(p.drawEnvelope[i][0], p.drawEnvelope[i][1]);
+				}
+				p.endShape();
+				
+>>>>>>> Stashed changes
 //			}
 		} 
     }  
@@ -155,19 +199,82 @@ var o_sketch = function(p) {
 
 	p.touchStarted = function() {
 		p.dot_x = mouseX;
+<<<<<<< Updated upstream
 		p.dot_y = mouseY + 368; // Because this canvas is offset -368 from "main" (spectrum) canvas
 		p.drawWave = [];
 		p.drawWave.push([p.dot_x,p.dot_y]);
+=======
+		p.dot_y = mouseY + 300; // Because this canvas is offset -300 from "main" (spectrum) canvas
+
+		if (wavedraw_mode == true){
+			if (p.dot_y > 100) {
+				waveform_bool = true;
+				p.drawWave = [];
+				//p.drawWave.push([p.dot_x,p.dot_y]);
+			}
+		}
+		if (envelope_bool == true){
+			//p.drawEnvelope.push([p.dot_x,p.dot_y]);
+			p.drawEnvelope = [];
+		}
+
+>>>>>>> Stashed changes
 		p.dot = true;
 	}
 	
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
+<<<<<<< Updated upstream
 		p.dot_y = mouseY + 368; // Because this canvas is offset -368 from "main" (spectrum) canvas		
 		p.drawWave.push([p.dot_x,p.dot_y]);
+=======
+		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas		
+		if (waveform_bool == true){
+			p.drawWave.push([p.dot_x,p.dot_y]);
+		}
+		if (envelope_bool == true){
+			p.drawEnvelope.push([p.dot_x,p.dot_y]);
+		}
+>>>>>>> Stashed changes
 	}
 
 	p.touchEnded = function() {
+		if ( (waveform_bool) && (p.drawWave.length > 0) ) {
+			num_steps = round(44100/curr_f0);
+			y_wave = new Float32Array(num_steps*1).fill(0.0); 
+		
+			idx = 0;
+			for (i=0; i<num_steps; i++) {
+				x_target = i*(width/num_steps);
+				while ( (idx < p.drawWave.length) && (p.drawWave[idx][0] < x_target )) {
+					idx++;
+				}
+				idx1 = max(idx-1,0);
+				idx2 = min(idx, p.drawWave.length - 1);
+				if (idx2 != idx1) {
+					amt = (x_target - p.drawWave[idx1][0]) / (p.drawWave[idx2][0] - p.drawWave[idx1][0]);
+				} else {
+					amt = 0.0;
+				}
+				
+				for (w=0; w<1; w++) {
+					y_wave[w*num_steps + i] = (lerp(p.drawWave[idx1][1],p.drawWave[idx2][1], amt) - 200)/(-100*wavedraw_scale);
+				}
+			}
+
+			if (synth.isPlaying) {
+				synth.stop();
+			}
+
+			synth = new p5.SoundFile();			
+			fft.setInput(synth);			
+			synth.setBuffer( [y_wave] );
+			synth.setLoop(true);
+			synth.play();
+		}
+
+		waveform_bool = false;
+	
 		p.dot = false;
 	}
 
