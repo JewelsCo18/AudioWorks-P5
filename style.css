@@ -67,6 +67,15 @@ canvas {
 	cursor: pointer;
 }
 
+.subheader_text_style{
+	width: 200px;
+	height: 100px; 
+	color:white; 
+	font-size: 14px; 
+	font-family: Helvetica; 
+	text-align: center;
+}
+
 .keyboard_style{
 	background-image: url("piano_icon.png");
 	background-size: 50px 50px;

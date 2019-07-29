@@ -4,7 +4,7 @@ var keyboard_sketch = function(p){
 
 	p.setup = function() {
 		cnv = p.createCanvas(0, 0);
-		cnv.position(0,0);
+		cnv.position(200,0);
 
 		note = new p5.TriOsc(); 
 		note.start(); 
@@ -18,7 +18,7 @@ var keyboard_sketch = function(p){
 			p.clear(); 
 
 			p.fill(68,0,255);
-			p.rect(230,move_y,windowWidth - 200, 50);
+			p.rect(30,move_y,windowWidth, 50);
 
 			left_button.position((windowWidth/3.5), move_y+7);  //FIX THIS 
 			right_button.position((windowWidth/1.05), move_y+7); //FIX THIS 
@@ -110,7 +110,7 @@ function playNote(num){
 		start_A = 27.5 //Hz for A0
 		extra = num; 
 		for (i = 0; i< num; i++){
-			if (i == 1 || i == 4 || i == 8 || i == 11 || i == 18 || i == 21 ){ //no flats in betwen
+			if (i == 1 || i == 4 || i == 8 || i == 11 || i == 18 || i == 21 ){ //no flats in between
 				//print("continue")
 				continue;
 			}

@@ -3,6 +3,9 @@
 
 var mic, fft, cnv, input, points;
 
+//SideBar Vars
+var curr_subheader; 
+
 //Spectrum Vars
 var divisions = 5;
 // var speed = 1;
@@ -62,7 +65,7 @@ var colour_button_pos;
 let sidebarWidth = 200; 
 
 //synthesis Vars
-var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start, slider_pos; 
+var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start, slider_pos, curr_f0_text; 
 var sliderNums = 17;//starting from 1 not 0 
 //var sliderNums = 10;//starting from 1 not 0 
 var sliders = [];
@@ -70,13 +73,12 @@ var slider_vals = [];
 var oscillators = [];
 
 var curr_f0 = 440; 
-var curr_f0_text;
 var curr_wave = 'sine'; 
 var keyboard_bool = false;
 var waveform_bool = false;
 var wavedraw_mode = false; 
 var envelope_bool = false;
-let slider_x_offset = 88; 	// offset needed for slider position when rotating -90deg (to vertical)
+let slider_x_offset = 88;   // offset needed for slider position when rotating -90deg (to vertical)
 let synthGainFudgeFactor = 0.07;
 let slider_y_default = 400;
 var y_wave = [];
@@ -86,6 +88,7 @@ let wavedraw_scale = 6;
 var curr_stroke = [255,119,0]; //rgb
 var curr_background = [255,255,255]; //rgb
 var string_colors = "rgb(255,119,0)";
+var default_bool = false; 
 
 //Keyboard Vars; 
 var move_y = 30; 
@@ -105,10 +108,6 @@ var black_keys = [];
 function setup() {
   //for Safari use of microphone
   userStartAudio();
-
-  //scroll - Doesn't work
-//  window.scrollTo(0,100); 
-//  window.scrollBy(0,20); 
 
 //  cnv = createCanvas(windowWidth/1.2, windowHeight/2);
   cnv = createCanvas(windowWidth - sidebarWidth, 400); 
@@ -149,7 +148,7 @@ function setup() {
     oscillators[i].amp(0);
   }
 
-	synth = new p5.SoundFile();  
+  synth = new p5.SoundFile();  
 }
 
 
@@ -158,69 +157,27 @@ function setup() {
 function draw() {
   noFill();
 
+  //aesthetics
+//    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],100); 
+  stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255); 
+//    background(curr_background[0],curr_background[1],curr_background[2],1); 
+  background(curr_background[0],curr_background[1],curr_background[2],255); 
+
   //variable to pinpoint correct heights of sound
-//  var h = height/divisions;	// unused
+//  var h = height/divisions; // unused
 
-	// Update current spectrum array, since we're about to draw it
+  // Update current spectrum array, since we're about to draw it
   var spectrum = fft.analyze();
-//  var newBuffer = [];		// unused
+//  var newBuffer = [];   // unused
 
-	// Insert just computed spectrum at the head (index 0) of the spectra array
+  // Insert just computed spectrum at the head (index 0) of the spectra array
   spectra.unshift(spectrum.slice(0,512));
   spectra.pop(); // Remove oldest (highest index) spectrum from the spectra array
 
-  //aesthetics - These should also be moved out of draw
-  if (colour_bool == true) {
-    stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),255);
-    background(red_slide.value(),green_slide.value(),blue_slide.value(),255);
-    curr_stroke[0] = rline_slide.value();
-    curr_stroke[1] = gline_slide.value();
-    curr_stroke[2] = bline_slide.value();   
-    curr_background[0] = red_slide.value();
-    curr_background[1] = green_slide.value();
-    curr_background[2] = blue_slide.value();
-    string_colors = "rgb(" + curr_stroke[0] + "," + curr_stroke[1] + "," + curr_stroke[2] + ")";  
-  }
-  else{
-//    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],100); 
-    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255); 
-//    background(curr_background[0],curr_background[1],curr_background[2],1); 
-    background(curr_background[0],curr_background[1],curr_background[2],255); 
-  }
-
-  //synthesis 
-/* 
-// YK - You shouldn't do this in the draw loop. Each of these values can be set when a slider / text value changes
-  if (synthesis_bool == true){
-    curr_f0 = overall_frequency_slider.value(); 
-    repositionSliders(); 
-
-    for (i = 1; i <= sliderNums; i++) {
-      oscillators[i].freq(curr_f0 * i);
-      
-    curr_fft = overall_frequency_slider.value(); 
-    recreateSliders(); 
-
-    
-    // FIX THIS PORTION 
-    for (i = 1; i <= sliderNums; i++) {
-      oscillators[i].freq(curr_fft*i);
-      oscillators[i].amp(sliders[i].value()*output_slider.value()); 
-      oscillators[i].setType(curr_wave); 
-      sliders[i].style('background-color', string_colors); 
-      overall_frequency_slider.style('background-color', string_colors);
-      input_slider.style('background-color', string_colors); 
-      output_slider.style('background-color', string_colors); 
-      wave_button.style('background-image', "url("+curr_wave+"_icon.png)"); 
-      mic.amp(input_slider.value()); 
-    } 
-  }
-*/  
-
-	drawSpectra();
-	
-    drawFrequencyLabels();
-      zoom_buttons(); 
+  drawSpectra();
+  
+  drawFrequencyLabels();
+  zoom_buttons(); 
 
 /*  if (pause_fft == 1 && synthesis_bool == false){
     speed = 0;
@@ -277,7 +234,7 @@ function touchEnded() {
 
 
 function drawSpectra() {
-	// Draw current and recent (depending on wave zoom level) FFT frames
+  // Draw current and recent (depending on wave zoom level) FFT frames
 
     // Set parameters for drawing spectrum frames
     if (waveScale == 1) {
@@ -311,44 +268,44 @@ function drawSpectra() {
     
     // Loop to draw current and past spectrum frames
     for (s=0; s<numSpectrumFrames; s += s_inc) {
-		if (s==0) {
-			strokeWeight(2); 
-		} else {
-			strokeWeight(1);
-		}
+    if (s==0) {
+      strokeWeight(2); 
+    } else {
+      strokeWeight(1);
+    }
       
-		stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
+    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
 
-		tempShape = beginShape();
+    tempShape = beginShape();
 
-		// Compute the number of spectrum indexes for current fftScale factor
-		spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
+    // Compute the number of spectrum indexes for current fftScale factor
+    spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
 
-		for (i = 0; i < spectrumEdge ; i++) {
-			curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
-		}
-		endShape();
-	}
+    for (i = 0; i < spectrumEdge ; i++) {
+      curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+    }
+    endShape();
+  }
 }
 
 
 
 function drawFrequencyLabels() {
-	textAlign(CENTER);
-	fill(0);
-	strokeWeight(1);
-	stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2], 40); 
+  textAlign(CENTER);
+  fill(0);
+  strokeWeight(1);
+  stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2], 40); 
 
-//	if (scrollSpectrum) {
-	textOffset = -width * scrollOffset/512 * Math.pow(2,fftScale);
-		
-//		textOffset += scrollCurX - scrollStartX;
-//		textOffset = max( min(textOffset, 0), -width*(Math.pow(2,fftScale)-1) );
-//	}
+//  if (scrollSpectrum) {
+  textOffset = -width * scrollOffset/512 * Math.pow(2,fftScale);
+    
+//    textOffset += scrollCurX - scrollStartX;
+//    textOffset = max( min(textOffset, 0), -width*(Math.pow(2,fftScale)-1) );
+//  }
 
-	if (fftScale == 0) {
-		textOffset = 0;
-	}
+  if (fftScale == 0) {
+    textOffset = 0;
+  }
 
 
   if (fftScale == 3) {
@@ -365,7 +322,7 @@ function drawFrequencyLabels() {
   for (f=f_steps; f < f_max; f+= f_steps) {
     this_x = width * f / 11025 * Math.pow(2,fftScale) + textOffset;
     if ( (this_x >= 0) && (this_x < width) )  {
-    	line(this_x,0,this_x,350);
+      line(this_x,0,this_x,350);
       text(f, width * f / 11025 * Math.pow(2,fftScale) + textOffset, 350);
     }
   }
@@ -379,11 +336,10 @@ function fft_zoom_in() {
 
 //    scrollOffset = 0;
 //    textOffset = 0;
-	  repositionSliders(); 	// Re-position sliders
+    repositionSliders();  // Re-position sliders
     scrollOffset *= 2;
     scrollOffset = 0;
     textOffset = 0;
-    recreateSliders(); 
 //    scrollOffset *= 2;
   }
 
@@ -393,11 +349,10 @@ function fft_zoom_out() {
     }
 //    scrollOffset = 0;
 //    textOffset = 0;
-    repositionSliders(); 	// Re-position sliders
+    repositionSliders();  // Re-position sliders
     scrollOffset = round(scrollOffset/2);
     scrollOffset = 0;
     textOffset = 0;
-    recreateSliders(); 
 //    scrollOffset = round(scrollOffset/2);
 
   }
@@ -428,24 +383,28 @@ var side_bar = function(p) {
     side_cnv.position(0,0);
     p.noLoop();
 
+    //MAIN SIDE BUTTONS
     micButton = createDiv('Mic ON');
     micButton.class('subheader_style');
     micButton.style('background-color', '#4400FF');
     micButton.mousePressed(restartMic);
     micButton.position(header_x, 50); 
-	input_slider = createSlider(0,5,1,0); 
-	input_slider.size(170);
-	input_slider.position(header_x, 120); 
-	input_slider.style('background-color', string_colors);
-	input_slider.input(update_input_gain); 
 
-	input_slider_input = createInput("1.0"); 
-	input_slider_input.size(40); 
-	input_slider_input.position(header_x +130, 90); 
-	input_slider_input.input(input_change);
-//	input_slider_input.value(input_gain);
-	  p.fill(255); 
-    p.text("Input:", header_x, 110); 
+    input_slider = createSlider(0,5,1,0); 
+    input_slider.size(170);
+    input_slider.position(header_x, 120); 
+    input_slider.style('background-color', string_colors);
+    input_slider.input(update_input_gain); 
+
+    input_slider_input = createInput("1.0"); 
+    input_slider_input.size(40); 
+    input_slider_input.position(header_x +130, 95); 
+    input_slider_input.input(input_change);
+  //  input_slider_input.value(input_gain);
+
+    input_header = createDiv('Input:'); 
+    input_header.class('subheader_text_style'); 
+    input_header.position(header_x-75, 95); 
 
     sound_button = createDiv("Sound Recorder"); 
     sound_button.class('subheader_style'); 
@@ -469,341 +428,83 @@ var side_bar = function(p) {
     colour_button.mousePressed(colour_adjustment); 
     colour_button.position(header_x, windowHeight-10-70); 
     colour_button_pos = windowHeight-10-colour_button.height - 70;
-    
-  }
 
-  p.draw = function() {
-    p.fill(255,255,255); 
-    p.textFont('Helvetica');
-//    p.background(0,0,0); 
+    //MIC SECTION 
 
-    var last_button = synthesis_button.y +synthesis_button.height/2; 
-
-    //Headers
-    p.textSize(36); 
-    p.text('AudioWorks', header_x,35);
-
-    //General Text Size 
-    p.textSize(14);
-
-    if (sound_bool == true) { 
-      p.text("Record and play back sound", header_x, last_button+ 45); 
-    }
-
-    if (frequency_bool == true){
-      //Frequency Blurb
-      p.text("Slide through values 0 to 15", header_x, last_button + 45);
-      p.text("to change frequency range input", header_x, last_button+ 60);
-
-      // //frequency slider descriptions
-      p.text("Bass", descriptor_x, last_button + 75); 
-      p.text("Mid", descriptor_x, last_button + 95);  
-      p.text("Treble", descriptor_x, last_button + 115);
-    }
-    
-    if (colour_bool == true) {
-      //colour picker description
-      //p.text("Change line/background color", header_x, colour_button_pos - 210); 
-
-      //colour slider descriptions
-      p.text("Line Color", header_x, colour_button_pos - 185); 
-      p.text("Red", descriptor_x, colour_button_pos - 165); 
-      p.text("Green", descriptor_x, colour_button_pos - 135); 
-      p.text("Blue", descriptor_x, colour_button_pos - 105); 
-
-      p.text("Background Color", header_x, colour_button_pos - 75); 
-      p.text("Red", descriptor_x, colour_button_pos - 55); 
-      p.text("Green", descriptor_x, colour_button_pos - 25); 
-      p.text("Blue", descriptor_x, colour_button_pos+5); 
-    }
-    
-    if (synthesis_bool == true) { 
-      p.text("Synthesize your own sound", header_x, last_button + 45);
-      p.text("Fundamental", header_x, synthesis_slider_start + 45);
-      p.text("Frequency:", header_x, synthesis_slider_start + 60); 
-      p.text("Input:", header_x, synthesis_slider_start + 115); 
-      p.text("Output:", header_x, synthesis_slider_start+170);   
-    }
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-var side_bar = new p5(side_bar); 
-var space = new p5(); 
-var o_p5 = new p5(o_sketch);
-var keyboard_p5 = new p5(keyboard_sketch); 
-
-///////////////////////////////////////////////////////////////////////////////
-
-//Button functions
-
-function sound_recorder() { 
-  //Create a set of buttons to record/play sounds
-  sound_bool = !sound_bool;
-
-  if (synthesis_bool == true){
-    synthesis_button.style('background-color', '#ffffff');
-    synthesis_bool = false; 
-    hide_synthesis(); 
-  }
-
-  if (sound_bool == true) {
-    sound_button.style('background-color', '#4400ff');
-//    side_bar.redraw(); 
+    mic_header = createDiv('Record and play back sound'); 
+    mic_header.class('subheader_text_style'); 
+    mic_header.position(header_x-10, last_button+ 30); 
 
     for (i=0; i<NumButtons; i++) {
       buttons[i] = createDiv('Record sound '+ (i+1));
       buttons[i].class('mic_style');
       buttons[i].mousePressed( toggleButton(i) );
-      buttons[i].position(10,i*45 + last_button + 50);
+      buttons[i].position(10,i*45 + last_button + 55);
       buttonState[i] = 0;
        
       // this sound file will be used to
       // playback & save the recording
-      soundFile[i] = new p5.SoundFile();  
-
-      curr_recorded_sound = null; //new set of sounds nothing recorded yet    
+      soundFile[i] = new p5.SoundFile();     
     }
-  }
 
-  else{
-    sound_button.style('background-color', '#ffffff');
-    for (i=0; i<NumButtons; i++) {
-      buttons[i].hide(); 
-    }
-//    side_bar.clear(); 
-//    side_bar.redraw();
-  }
-}
+    hide_micButtons();
 
-function colour_adjustment() { 
-  colour_bool = !colour_bool;
+    //COLOUR SECTION 
 
-  if (colour_bool == true) {
-    colour_button.style('background-color', '#4400ff');
+    //p.text("Change line/background color", header_x, colour_button_pos - 210); 
+    line_header = createDiv('Line Color'); 
+    line_header.class('subheader_text_style'); 
+    line_header.position(header_x-70, colour_button_pos - 210); 
 
-//    side_bar.redraw(); 
+    background_header = createDiv('Background Color'); 
+    background_header.class('subheader_text_style'); 
+    background_header.position(header_x-45, colour_button_pos - 90); 
 
     default_button = createButton("Default"); 
-    default_button.position(header_x + 100, colour_button_pos - 200); 
-    default_button.mousePressed(default_setting); 
-
-    default_button = createButton("Default"); 
-    default_button.position(header_x + 100, colour_button_pos - 200); 
+    default_button.position(header_x + 120, colour_button_pos - 210); 
     default_button.mousePressed(default_setting); 
 
     //Stroke Sliders
     rline_slide = createSlider(0, 255, curr_stroke[0],1); 
     rline_slide.position(slide_x, colour_button_pos - 180); 
+    rline_slide.size(170); 
     rline_slide.style('background-image', 'linear-gradient(to right,black,red')
 
     gline_slide = createSlider(0,255, curr_stroke[1],1);
     gline_slide.position(slide_x, colour_button_pos - 150); 
+    gline_slide.size(170); 
     gline_slide.style('background-image', 'linear-gradient(to right,black,green')
 
     bline_slide = createSlider(0,255,curr_stroke[2],1); 
-    bline_slide.position(slide_x, colour_button_pos - 120); 
+    bline_slide.position(slide_x, colour_button_pos - 120);
+    bline_slide.size(170); 
     bline_slide.style('background-image', 'linear-gradient(to right,black,blue')
 
     //Background Sliders
     red_slide = createSlider(0, 255, curr_background[0],1);
     red_slide.position(slide_x, colour_button_pos - 70); 
+    red_slide.size(170); 
     red_slide.style('background-image', 'linear-gradient(to right,black,red')
 
     green_slide = createSlider(0,255, curr_background[1],1);
     green_slide.position(slide_x, colour_button_pos - 40); 
+    green_slide.size(170); 
     green_slide.style('background-image', 'linear-gradient(to right,black,green')
 
     blue_slide = createSlider(0,255,curr_background[2],1);
     blue_slide.position(slide_x, colour_button_pos - 10); 
+    blue_slide.size(170); 
     blue_slide.style('background-image', 'linear-gradient(to right,black,blue')
-  }
-  else{
-    colour_button.style('background-color', '#ffffff');
 
-    default_button.hide(); 
+    hide_colours(); //to ensure the start screen doesn't have the colour adjsuters
 
-    rline_slide.hide(); 
-    gline_slide.hide(); 
-    bline_slide.hide(); 
+    //SYNTHESIS SECTION 
 
-    red_slide.hide(); 
-    green_slide.hide(); 
-    blue_slide.hide(); 
+    synthesis_header = createDiv('Synthesize your own sound'); 
+    synthesis_header.class('subheader_text_style'); 
+    synthesis_header.position(header_x-10, last_button + 27);
 
-//    side_bar.clear(); 
-//    side_bar.redraw();  
-
-  }
-}
-
-function default_setting(){
-  var default_stroke = [255,119,0]; //default stroke setting
-  var default_background = [255,255,255]; //default background setting 
-  
-  rline_slide.value(default_stroke[0]); 
-  gline_slide.value(default_stroke[1]); 
-  bline_slide.value(default_stroke[2]); 
-
-  red_slide.value(default_background[0]); 
-  green_slide.value(default_background[1]); 
-  blue_slide.value(default_background[2]); 
-}
-
-function synthesizer() {
-  synthesis_bool = !synthesis_bool;
-  var recording_adjustment = 50;   
-
-  if (sound_bool == true && curr_recorded_sound != null){
-    sound_button.style('background-color', '#ffffff');
-    sound_bool = false; 
-
-//    side_bar.clear(); 
-//    side_bar.redraw(); 
-
-    for (i=0; i<=NumButtons-1; i++){
-      if (buttonState[i] == 2){
-        buttons[i].position(header_x, last_button + 50); 
-        recording_adjustment = 90; 
-      }
-      else{
-        buttons[i].hide(); 
-      }
-    }
-  }
-  else if (sound_bool == true) {
-    sound_button.style('background-color', '#ffffff');
-    sound_bool = false; 
-
-//    side_bar.clear(); 
-//    side_bar.redraw(); 
-
-    for (i=0; i<=NumButtons-1; i++){
-      buttons[i].hide(); 
-    }
-  }
-
-	// Activate and show synthesizer
-	if (synthesis_bool == true) {
-		mic.amp(0); // Turn off mic
-		 
-		synthesis_button.style('background-color', '#4400ff');
-
-		for (i=1; i<sliderNums+1; i++) {
-//			slider_pos = (curr_f0*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512) + 113;  
-			slider_pos = width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) + slider_x_offset;
-	//		print(slider_pos); 
-			sliders[i] = createSlider(0,1,0,0); 
-			sliders[i].size(225);
-			sliders[i].style('transform', 'rotate(-90deg');
-			sliders[i].input( updateSlider(i) );
-			sliders[i].position(slider_pos, slider_y_default);
-
-	//      if (slider_pos<= windowWidth-200 || slider_pos >= windowWidth){
-			if (slider_pos <= 0 || slider_pos > width){
-	//      	sliders[i].style('background-color', 'transparent')
-				sliders[i].hide();
-			}
-			else {
-				sliders[i].style('background-color', string_colors); 
-			}
-			oscillators[i].start(); 
-		}
-
-		keyboard_button = createDiv(" "); 
-		keyboard_button.class("keyboard_style"); 
-		keyboard_button.mousePressed(access_keyboard); 
-		keyboard_button.position(header_x + 20, last_button + recording_adjustment);
-
-		wave_button = createDiv(" "); 
-		wave_button.class("waveType_style"); 
-		wave_button.mousePressed(set_waveType('sine')); 
-		wave_button.position(header_x + 100, last_button + recording_adjustment); 
-
-		icon_end = last_button + recording_adjustment + 50; //50 is how large the icon currently is 
-
-		draw_wave_button = createDiv("Draw Waveform"); 
-		draw_wave_button.class("button_style"); 
-		draw_wave_button.mousePressed(wave_drawing); 
-		draw_wave_button.position(header_x, icon_end + 15); 
-
-		draw_envelope_button = createDiv("Draw Envelope"); 
-		draw_envelope_button.class("button_style"); 
-		draw_envelope_button.mousePressed(envelope_drawing); 
-		draw_envelope_button.position(header_x, icon_end + 55); 
-
-		preset1_button = createDiv("Preset 1"); 
-		preset1_button.class("button_style"); 
-		preset1_button.mousePressed(set_preset1); 
-		preset1_button.position(header_x, icon_end + 95);
-
-		preset2_button = createDiv("Preset 2"); 
-		preset2_button.class("button_style"); 
-		preset2_button.mousePressed(set_preset2); 
-		preset2_button.position(header_x, icon_end + 135);  
-
-		synthesis_slider_start = preset2_button.y+ preset2_button.height; 
-
-		frequency_input = createInput(""); 
-		frequency_input.size(70); 
-		frequency_input.position(header_x + 100, synthesis_slider_start+33); 
-		frequency_input.style("height", "20px"); 
-		frequency_input.input(frequency_change); 
-		frequency_input.value(curr_f0);
-
-		overall_frequency_slider = createSlider(50,1000,curr_f0,0);
-		overall_frequency_slider.size(170); 
-		overall_frequency_slider.position(header_x, synthesis_slider_start + 65); 
-		overall_frequency_slider.style('background-color', string_colors);
-		overall_frequency_slider.input(repositionSliders); // set callback for value changes
-
-		output_slider = createSlider(0,1,1,0); 
-		output_slider.size(170);
-		output_slider.position(header_x, synthesis_slider_start+120); 
-		output_slider.style('background-color', string_colors);
-		output_slider.input(update_output_gain);
-
-		output_slider_input = createInput(""); 
-		output_slider_input.size(70); 
-		output_slider_input.position(header_x +100, synthesis_slider_start + 90); 
-		output_slider_input.input(output_change);  
-
-//		side_bar.clear();
-//		side_bar.redraw();
-
-		stopMic();
-		fft.setInput(); 
-	}
-	else { 
-		synthesis_button.style('background-color', '#ffffff');
-
-		restartMic();
-		fft.setInput(mic); 
-		hide_synthesis(); 
-	}
-}
-
-function update_input_gain() {
-	input_gain = input_slider.value();
-	mic.amp(input_gain);
-	input_slider_input.value( input_gain );	
-}
-    for (i=1; i<sliderNums+1; i++) {
-      slider_pos = (curr_fft*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512);  
-      print(slider_pos); 
-      sliders[i] = createSlider(0,1,0,0.01); 
-      sliders[i].position(slider_pos, 575); 
-      if (slider_pos<= windowWidth-200 || slider_pos >= windowWidth){
-        sliders[i].style('background-color', 'transparent')
-      }
-      else{
-        sliders[i].style('background-color', string_colors); 
-      }
-      sliders[i].size(225);
-      sliders[i].style('transform', 'rotate(-90deg'); 
-      oscillators[i].start(); 
-    }
+    var recording_adjustment = 50; 
 
     keyboard_button = createDiv(" "); 
     keyboard_button.class("keyboard_style"); 
@@ -839,52 +540,333 @@ function update_input_gain() {
 
     synthesis_slider_start = preset2_button.y+ preset2_button.height; 
 
+    ff1_header = createDiv('Fundamental'); 
+    ff1_header.class('subheader_text_style'); 
+    ff1_header.position(header_x-60, synthesis_slider_start + 25);
+
+    ff2_header = createDiv('Frequency:'); 
+    ff2_header.class('subheader_text_style'); 
+    ff2_header.position(header_x-65, synthesis_slider_start + 40); 
+
+    output_header = createDiv('Output:'); 
+    output_header.class('subheader_text_style'); 
+    output_header.position(header_x-75, synthesis_slider_start+90); 
+
     frequency_input = createInput(""); 
     frequency_input.size(70); 
     frequency_input.position(header_x + 100, synthesis_slider_start+33); 
     frequency_input.style("height", "20px"); 
     frequency_input.input(frequency_change); 
+    frequency_input.value(curr_f0);
 
-    overall_frequency_slider = createSlider(0,1000,curr_fft); 
+    overall_frequency_slider = createSlider(50,1000,curr_f0,0);
+    overall_frequency_slider.size(170); 
     overall_frequency_slider.position(header_x, synthesis_slider_start + 65); 
     overall_frequency_slider.style('background-color', string_colors);
+    overall_frequency_slider.input(repositionSliders); // set callback for value changes
 
-    input_slider = createSlider(0,10,1,0.1); 
-    input_slider.position(header_x, synthesis_slider_start + 120); 
-    input_slider.style('background-color', string_colors); 
-
-    input_slider_input = createInput(""); 
-    input_slider_input.size(70); 
-    input_slider_input.position(header_x +100, synthesis_slider_start +100); 
-    input_slider_input.input(input_change); 
-
-    output_slider = createSlider(0,10,0,0.1); 
-    output_slider.position(header_x, synthesis_slider_start+175); 
+    output_slider = createSlider(0,1,1,0); 
+    output_slider.size(170);
+    output_slider.position(header_x, synthesis_slider_start+120); 
     output_slider.style('background-color', string_colors);
+    output_slider.input(update_output_gain);
 
     output_slider_input = createInput(""); 
     output_slider_input.size(70); 
-    output_slider_input.position(header_x +100, synthesis_slider_start + 155); 
+    output_slider_input.position(header_x +100, synthesis_slider_start + 90); 
     output_slider_input.input(output_change);  
 
-    side_bar.clear();
-    side_bar.redraw(); 
+    hide_synthesis() //to ensure that everything is hidden initially 
+    
   }
 
+  p.draw = function() {
+    p.fill(255,255,255); 
+    p.textFont('Helvetica');
+//    p.background(0,0,0); 
 
-function update_output_gain() {
-	output_slider_input.value( output_slider.value() );
-	
-	for (i=1; i<sliderNums+1; i++) {
-		oscillators[i].amp( sliders[i].value() * output_slider.value() * synthGainFudgeFactor );
-	}
+    var last_button = synthesis_button.y +synthesis_button.height/2; 
+
+    //Headers
+    p.textSize(36); 
+    p.text('AudioWorks', header_x,35);
+
+
+    // if (frequency_bool == true){
+    //   //Frequency Blurb
+    //   p.text("Slide through values 0 to 15", header_x, last_button + 45);
+    //   p.text("to change frequency range input", header_x, last_button+ 60);
+
+    //   // //frequency slider descriptions
+    //   p.text("Bass", descriptor_x, last_button + 75); 
+    //   p.text("Mid", descriptor_x, last_button + 95);  
+    //   p.text("Treble", descriptor_x, last_button + 115);
+    // }
+    
+  }
+
+  p.touchMoved = function(){
+    updateColours(); 
+  }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+var side_bar = new p5(side_bar); 
+var space = new p5(); 
+var o_p5 = new p5(o_sketch);
+var keyboard_p5 = new p5(keyboard_sketch); 
+
+///////////////////////////////////////////////////////////////////////////////
+
+//Button functions
+
+function sound_recorder() { 
+  //Create a set of buttons to record/play sounds
+  sound_bool = !sound_bool;
+
+  if (synthesis_bool == true){
+    synthesis_button.style('background-color', '#ffffff');
+    synthesis_bool = false; 
+    hide_synthesis(); 
+  }
+
+  if (sound_bool == true) {
+    sound_button.style('background-color', '#4400ff');
+
+    mic_header.show(); 
+
+    for (i=0; i<NumButtons; i++) {
+      buttons[i].show();
+      curr_recorded_sound = null; //new set of sounds nothing recorded yet 
+    }
+  }
+
+  else{
+    sound_button.style('background-color', '#ffffff');
+    hide_micButtons(); 
+  }
+}
+
+function hide_micButtons(){
+  mic_header.hide(); 
+  for (i=0; i<NumButtons; i++) {
+      buttons[i].hide(); 
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+function colour_adjustment() { 
+  colour_bool = !colour_bool;
+
+  if (colour_bool == true) {
+    colour_button.style('background-color', '#4400ff');
+
+    line_header.show(); 
+    background_header.show(); 
+    default_button.show(); 
+
+    rline_slide.show(); 
+    gline_slide.show(); 
+    bline_slide.show(); 
+
+    red_slide.show(); 
+    green_slide.show(); 
+    blue_slide.show(); 
+    
+  }
+  else{
+    colour_button.style('background-color', '#ffffff');
+    hide_colours(); 
+
+  }
+}
+
+function hide_colours(){
+  line_header.hide(); 
+  background_header.hide(); 
+  default_button.hide(); 
+
+  rline_slide.hide(); 
+  gline_slide.hide(); 
+  bline_slide.hide(); 
+
+  red_slide.hide(); 
+  green_slide.hide(); 
+  blue_slide.hide(); 
+}
+
+function default_setting(){
+  default_bool = true; 
+  updateColours(); 
+}
+
+function updateColours(){
+  if (default_bool == false){
+    stroke(rline_slide.value(),gline_slide.value(),bline_slide.value(),255);
+    background(red_slide.value(),green_slide.value(),blue_slide.value(),255);
+  }
+  else{
+      rline_slide.value(255); 
+      gline_slide.value(119); 
+      bline_slide.value(0); 
+
+      red_slide.value(255); 
+      green_slide.value(255); 
+      blue_slide.value(255); 
+
+      default_bool = false; 
+  }
+  
+  curr_stroke[0] = rline_slide.value();
+  curr_stroke[1] = gline_slide.value();
+  curr_stroke[2] = bline_slide.value();   
+  curr_background[0] = red_slide.value();
+  curr_background[1] = green_slide.value();
+  curr_background[2] = blue_slide.value();
+
+  string_colors = "rgb(" + curr_stroke[0] + "," + curr_stroke[1] + "," + curr_stroke[2] + ")"; 
+
+  input_slider.style('background-color', string_colors); 
+  overall_frequency_slider.style('background-color', string_colors);
+  output_slider.style('background-color', string_colors); 
+  
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+function synthesizer() {
+  synthesis_bool = !synthesis_bool;  
+
+  if (sound_bool == true && curr_recorded_sound != null){
+    sound_button.style('background-color', '#ffffff');
+    sound_bool = false; 
+
+    for (i=0; i<=NumButtons-1; i++){
+      if (buttonState[i] == 2){
+        buttons[i].position(header_x, last_button + 50); 
+        recording_adjustment = 90; 
+      }
+      else{
+        buttons[i].hide(); 
+      }
+    }
+  }
+  else if (sound_bool == true) {
+    sound_button.style('background-color', '#ffffff');
+    sound_bool = false;
+    hide_micButtons(); 
+  }
+
+  // Activate and show synthesizer
+  if (synthesis_bool == true) {
+    mic.amp(0); // Turn off mic
+     
+    synthesis_button.style('background-color', '#4400ff');
+
+    for (i=1; i<sliderNums+1; i++) {
+//      slider_pos = (curr_f0*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512) + 113;  
+      slider_pos = width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) + slider_x_offset;
+  //    print(slider_pos); 
+      sliders[i] = createSlider(0,1,0,0); 
+      sliders[i].size(225);
+      sliders[i].style('transform', 'rotate(-90deg');
+      sliders[i].input( updateSlider(i) );
+      sliders[i].position(slider_pos, slider_y_default);
+
+  //      if (slider_pos<= windowWidth-200 || slider_pos >= windowWidth){
+      if (slider_pos <= 0 || slider_pos > width){
+  //        sliders[i].style('background-color', 'transparent')
+        sliders[i].hide();
+      }
+      else {
+        sliders[i].style('background-color', string_colors); 
+      }
+      oscillators[i].start(); 
+    }
+
+    synthesis_header.show(); 
+    ff1_header.show(); 
+    ff2_header.show(); 
+    output_header.show(); 
+
+    keyboard_button.show();
+    wave_button.show(); 
+    draw_envelope_button.show(); 
+    draw_wave_button.show(); 
+    preset1_button.show(); 
+    preset2_button.show(); 
+    
+    overall_frequency_slider.show(); 
+    frequency_input.show();
+    output_slider.show(); 
+    output_slider_input.show(); 
+
+    stopMic();
+    fft.setInput(); 
+  }
+  else { 
+    synthesis_button.style('background-color', '#ffffff');
+
+    restartMic();
+    fft.setInput(mic); 
+    hide_synthesis(); 
+
+    for (i = 1; i < sliderNums+1; i++) { 
+      sliders[i].hide(); 
+      oscillators[i].stop(); 
+    }
+
+    if (curr_recorded_sound!= null){
+      buttons[curr_recorded_sound].hide(); 
+    }
+    
+    wavedraw_mode = false;
+    if ( synth.isPlaying() ) {
+      synth.stop();
+    }
+  }
+}
+
+function hide_synthesis(){
+  synthesis_header.hide(); 
+  ff1_header.hide(); 
+  ff2_header.hide(); 
+  output_header.hide(); 
+
+  keyboard_button.hide();
+  wave_button.hide(); 
+  draw_envelope_button.hide(); 
+  draw_wave_button.hide(); 
+  preset1_button.hide(); 
+  preset2_button.hide(); 
+
+  overall_frequency_slider.hide(); 
+  frequency_input.hide();
+  output_slider.hide(); 
+  output_slider_input.hide(); 
+
+}
+
+function update_input_gain() {
+  input_gain = input_slider.value();
+  mic.amp(input_gain);
+  input_slider_input.value( input_gain ); 
+}
+
+function update_output_gain() {
+  output_slider_input.value( output_slider.value() );
+  
+  for (i=1; i<sliderNums+1; i++) {
+    oscillators[i].amp( sliders[i].value() * output_slider.value() * synthGainFudgeFactor );
+  }
+}
 
 function updateSlider(idx) {
-	return function() {
-		oscillators[idx].amp( sliders[idx].value() * output_slider.value() * synthGainFudgeFactor );
-	}
+  return function() {
+    oscillators[idx].amp( sliders[idx].value() * output_slider.value() * synthGainFudgeFactor );
+  }
 }
 
 function repositionSliders(){
@@ -894,135 +876,58 @@ function repositionSliders(){
     sliders[i].hide(); 
   } */
 
-	// Update values
-	curr_f0 = overall_frequency_slider.value();
-	frequency_input.value(curr_f0);
-
-	for (i=1; i<sliderNums+1; i++) {
-		slider_pos = round( width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) ) + slider_x_offset;
-//		sliders[i] = createSlider(0,1,0,0.01); 
-//		sliders[i].size(225);
-		sliders[i].position(slider_pos, slider_y_default); 
-//		sliders[i].style('transform', 'rotate(-90deg)'); 
-		oscillators[i].freq(curr_f0 * i);
-
-//      if (slider_pos<= 50 || slider_pos >= 1280){
-		if (slider_pos <= slider_x_offset || slider_pos >= width + slider_x_offset){
-//        sliders[i].style('background-color', 'transparent')
-//        print("transparent"); //for some reason I can't remove the back 
-			sliders[i].hide();
-      }
-      else{
-//		sliders[i].style('background-color', string_colors); 
-		sliders[i].show();
-      }
-	}
-=======
-    fft.setInput(mic); 
-    hide_synthesis(); 
-
-  }
-}
-
-function recreateSliders(){
-
-  for (i = 1; i<sliderNums+1; i++){
-    sliders[i].hide(); 
-  }
+  // Update values
+  curr_f0 = overall_frequency_slider.value();
+  frequency_input.value(curr_f0);
 
   for (i=1; i<sliderNums+1; i++) {
-      slider_pos = (curr_fft*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512);
-      sliders[i] = createSlider(0,1,0,0.01); 
-      sliders[i].position(slider_pos, 575); 
-      if (slider_pos<= 50 || slider_pos >= 1280){
-        sliders[i].style('background-color', 'transparent')
-        print("transparent"); //for some reason I can't remove the back 
+    slider_pos = round( width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) ) + slider_x_offset;
+//    sliders[i] = createSlider(0,1,0,0.01); 
+//    sliders[i].size(225);
+    sliders[i].position(slider_pos, slider_y_default); 
+//    sliders[i].style('transform', 'rotate(-90deg)'); 
+    oscillators[i].freq(curr_f0 * i);
+
+//      if (slider_pos<= 50 || slider_pos >= 1280){
+    if (slider_pos <= slider_x_offset || slider_pos >= width + slider_x_offset){
+//        sliders[i].style('background-color', 'transparent')
+//        print("transparent"); //for some reason I can't remove the back 
+      sliders[i].hide();
       }
       else{
-        sliders[i].style('background-color', string_colors); 
+//    sliders[i].style('background-color', string_colors); 
+    sliders[i].show();
       }
-      sliders[i].size(225);
-      sliders[i].style('transform', 'rotate(-90deg'); 
   }
-}
-
-function hide_synthesis(){
-  keyboard_button.hide();
-  wave_button.hide(); 
-  draw_envelope_button.hide(); 
-  draw_wave_button.hide(); 
-  preset1_button.hide(); 
-  preset2_button.hide(); 
-
-//  side_bar.clear(); 
-//  side_bar.redraw();
-//  recreateButtons();  
-
-  overall_frequency_slider.hide(); 
-  frequency_input.hide();
-//  input_slider.hide();
-//  input_slider_input.hide(); 
-  output_slider.hide(); 
-  output_slider_input.hide(); 
-
-  for (i = 1; i < sliderNums+1; i++) { 
-    sliders[i].hide(); 
-    oscillators[i].stop(); 
+    fft.setInput(mic); 
   }
-
-  if (curr_recorded_sound!= null){
-    buttons[curr_recorded_sound].hide(); 
-  }
-  
-  wavedraw_mode = false;
-  if ( synth.isPlaying() ) {
-  	synth.stop();
-	}
-}
-  
-function recreateButtons() { 
-  fft_b_zoom_in = createButton("+"); 
-  fft_b_zoom_in.position(windowWidth - rightMargin, 420); 
-  fft_b_zoom_in.size(zoomButtonSize, zoomButtonSize);
-  fft_b_zoom_in.mousePressed(fft_zoom_in);  
-  
-  fft_b_zoom_out = createButton("-"); 
-  fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 420); 
-  fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
-  fft_b_zoom_out.mousePressed(fft_zoom_out); 
-}
 
 
 function frequency_change() { 
-	curr_f0 = frequency_input.value();
-	
+  curr_f0 = frequency_input.value();
+  
 //  overall_frequency_slider.value(frequency_input.value()); 
   overall_frequency_slider.value(curr_f0);
   repositionSliders();
 }
 
 function input_change(){
-	input_gain = parseFloat( input_slider_input.value() );
-	mic.amp(input_gain);
-	input_slider.value( input_gain ); 
+  input_gain = parseFloat( input_slider_input.value() );
+  mic.amp(input_gain);
+  input_slider.value( input_gain ); 
 }
 
 function output_change() {
-	output_slider.value( parseFloat(output_slider_input.value()) );
-	for (i=1; i<sliderNums+1; i++) {
-		oscillators[i].amp( sliders[i].value() * output_slider.value() );
-	}	   
+  output_slider.value( parseFloat(output_slider_input.value()) );
+  for (i=1; i<sliderNums+1; i++) {
+    oscillators[i].amp( sliders[i].value() * output_slider.value() );
+  } 
+}   
 
-function frequency_change(){ 
-  overall_frequency_slider.value(frequency_input.value()); 
-}
-
-function input_change(){
-  input_slider.value(input_slider_input.value()); 
-}
-
-function output_change(){
-  output_slider.value(output_slider_input.value()); 
+function updateWaveType(){
+  for (i = 1; i <= sliderNums; i++) {
+      oscillators[i].setType(curr_wave); 
+  }
 }
 
 //Oscillator Wave Settings 
@@ -1032,19 +937,22 @@ function set_waveType(change_wave) {
 
     // make sure user enabled the mic
     if (change_wave === 'sine') {
+      wave_button.style('background-image', "url(sine_icon.png)"); 
       curr_wave = 'square';
       change_wave = 'square';//this is so that the toggle keeps on moving 
-      print("1"); 
+      updateWaveType(); 
     }
     else if (change_wave === 'square') {  
-      curr_wave = 'sawtooth';
+      wave_button.style('background-image', "url(square_icon.png)"); 
+      curr_wave = 'saw';
       change_wave = 'saw';
-      print("2"); 
+      updateWaveType();  
     }
     else if (change_wave === 'saw') {
+      wave_button.style('background-image', "url(saw_icon.png)"); 
       curr_wave = 'sine';
       change_wave = 'sine';
-      print("3");
+      updateWaveType(); 
     }
   }
 }
@@ -1057,7 +965,6 @@ function wave_drawing(){
     draw_envelope_button.style('background-color', '#ffffff');
     
   }
-
 
   if (wavedraw_mode == true){
     draw_wave_button.style('background-color', '#4400ff');
@@ -1095,6 +1002,7 @@ function set_preset2(){
 
 
 }
+///////////////////////////////////////////////////////////////////////////////
 
 //Frequency Adjuster option
 // function frequency_sliders() { 
@@ -1102,8 +1010,7 @@ function set_preset2(){
 
 //   if (frequency_bool == true) {
 //     frequency_button.style('background-color', '#4400ff');
-
-//     side_bar.redraw(); 
+//     
 //     //Frequency Sliders
 //     trebleslider = createSlider(0,15,curr_points[0]); 
 //     trebleslider.position(slide_x, last_button + 105); 
@@ -1121,8 +1028,6 @@ function set_preset2(){
 //     bassslider.hide(); 
 //     midslider.hide(); 
 //     trebleslider.hide();
-//     side_bar.clear(); 
-//     side_bar.redraw(); 
 //   }
   
 // }
@@ -1146,7 +1051,7 @@ function access_keyboard(){
     right_button.style("piano_button_style"); 
     right_button.mousePressed(keyboard_p5.move_right);  
 
-    keyboard_p5.resizeCanvas(windowWidth, windowHeight); 
+    keyboard_p5.resizeCanvas(windowWidth-200, windowHeight); 
 
   }
   else{
@@ -1287,7 +1192,7 @@ function restartMic() {
     pause_wave = 0;
     pause_fft = 0; 
 //    mic.start();
-	mic.amp(input_gain);
+  mic.amp(input_gain);
     micOn = true;
     micButton.html('Mic ON');
     micButton.style('background-color', '#4400ff');
@@ -1431,4 +1336,3 @@ function restartMic() {
 
 //   return val;
 // }
-

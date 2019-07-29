@@ -57,14 +57,8 @@ var o_sketch = function(p) {
 		if (pause_wave == 0) {
 			p.strokeWeight(2);
 
-			if (colour_bool == true) {
-				p.stroke(rline_slide.value(),gline_slide.value(),bline_slide.value());
-				p.background(red_slide.value(),green_slide.value(),blue_slide.value());
-			}
-			else{
-				p.stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2]); 
-				p.background(curr_background[0],curr_background[1],curr_background[2]); 
-			}
+			p.stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2]); 
+			p.background(curr_background[0],curr_background[1],curr_background[2]); 
 
 	//      var wave = p.fft.waveform();	// not needed, use fft.waveform()
 			p.wave = p.wave.concat(fft.waveform());
