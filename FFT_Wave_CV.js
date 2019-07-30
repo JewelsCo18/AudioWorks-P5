@@ -86,11 +86,11 @@ var e_wave = [];
 var ye_wave = [];
 let wavedraw_scale = 1;
 var synth_len = 44100; // One second, initially
-
 var preset1 = []; 
 var preset2 = []; 
 var preset1_bool = false; 
 var preset2_bool = false; 
+var sliders_shown_bool = true; 
 
 //Colour Vars; 
 var curr_stroke = [255,119,0]; //rgb
@@ -538,14 +538,20 @@ var side_bar = function(p) {
     keyboard_button = createDiv(" "); 
     keyboard_button.class("keyboard_style"); 
     keyboard_button.mousePressed(access_keyboard); 
-    keyboard_button.position(header_x + 20, last_button + recording_adjustment);
+    keyboard_button.position(header_x + 10, last_button + recording_adjustment);
+
+    slider_button = createDiv(" "); 
+    slider_button.class("slider_display_style"); 
+    slider_button.style('background-color', '#4400ff');
+    slider_button.mousePressed(show_sliders); 
+    slider_button.position(header_x + 70, last_button + recording_adjustment); 
 
     wave_button = createDiv(" "); 
     wave_button.class("waveType_style"); 
     wave_button.mousePressed(set_waveType('sine')); 
-    wave_button.position(header_x + 100, last_button + recording_adjustment); 
+    wave_button.position(header_x + 130, last_button + recording_adjustment); 
 
-    icon_end = last_button + recording_adjustment + 50; //50 is how large the icon currently is 
+    icon_end = last_button + recording_adjustment + 40; //50 is how large the icon currently is 
 
     draw_wave_button = createDiv("Draw Waveform"); 
     draw_wave_button.class("button_style"); 
@@ -829,6 +835,7 @@ function synthesizer() {
 
     keyboard_button.show();
     wave_button.show(); 
+    slider_button.show(); 
     draw_envelope_button.show(); 
     draw_wave_button.show(); 
     preset1_button.show(); 
@@ -878,6 +885,7 @@ function hide_synthesis(){
 
   keyboard_button.hide();
   wave_button.hide(); 
+  slider_button.hide(); 
   draw_envelope_button.hide(); 
   draw_wave_button.hide(); 
   preset1_button.hide(); 
@@ -888,6 +896,23 @@ function hide_synthesis(){
   output_slider.hide(); 
   output_slider_input.hide(); 
 
+}
+
+function show_sliders(){
+  sliders_shown_bool = !sliders_shown_bool;
+
+  if (sliders_shown_bool == true){
+    slider_button.style('background-color', '#4400ff');
+    for (i = 1; i<sliderNums+1; i++){
+      sliders[i].show()
+    }
+  }
+  else{
+    slider_button.style('background-color', '#ffffff');
+    for (i = 1; i<sliderNums+1; i++){
+      sliders[i].hide()
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

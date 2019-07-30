@@ -20,8 +20,8 @@ var keyboard_sketch = function(p){
 			p.fill(68,0,255);
 			p.rect(30,move_y,windowWidth, 50);
 
-			left_button.position((windowWidth/3.3), move_y+7);  //FIX THIS 
-			right_button.position((windowWidth/1.15), move_y+7); //FIX THIS 
+			left_button.position((windowWidth/3.3), move_y+7); 
+			right_button.position((windowWidth/1.15), move_y+7);
 
 			for (i = 0; i<= keyNums; i++){ 
 				//white keys
