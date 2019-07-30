@@ -110,7 +110,7 @@ function playNote(num){
 		start_A = 27.5 //Hz for A0
 		extra = num; 
 		for (i = 0; i< num; i++){
-			if (i == 1 || i == 4 || i == 8 || i == 11 || i == 18 || i == 21 ){ //no flats in between
+			if (i == 1 || i == 4 || i == 8 || i == 11 || i == 15|| i == 18 || i == 21 ){ //no flats in between
 				//print("continue")
 				continue;
 			}
@@ -123,7 +123,7 @@ function playNote(num){
 		steps = (octave_start * 13) - (octave_start) + extra; //calculating how many half steps for frequency equation 
 
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
-		//print("white", new_frequency);
+		//print("white", new_frequency, num);
 		note.freq(new_frequency); 
 		note.fade(0.5,0.2); 
 
