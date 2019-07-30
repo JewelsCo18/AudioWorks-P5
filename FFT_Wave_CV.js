@@ -935,13 +935,11 @@ function repositionSliders(){
 
 //      if (slider_pos<= 50 || slider_pos >= 1280){
 		if (slider_pos <= slider_x_offset || slider_pos >= width + slider_x_offset){
-//        sliders[i].style('background-color', 'transparent')
-//        print("transparent"); //for some reason I can't remove the back 
 			sliders[i].hide();
       }
       else{
-//		sliders[i].style('background-color', string_colors); 
-		//sliders[i].show();
+        sliders[i].style('background-color', string_colors); 
+		    sliders[i].show();
       }
 	}
 }
@@ -1043,7 +1041,7 @@ function set_preset1(){
 
   if (preset1_bool == true){
     preset1_button.style('background-color', '#4400ff');
-    for (i=1; i<sliderNums+1; i++){
+    for (i=1; i<sliderNums; i++){
       sliders[i].value(preset1[i]); 
       oscillators[i].amp(preset1[i] * output_slider.value() * synthGainFudgeFactor );
     }
@@ -1059,7 +1057,7 @@ function set_preset2(){
 
   if (preset2_bool == true){
     preset2_button.style('background-color', '#4400ff');
-    for (i=1; i<sliderNums+1; i++){
+    for (i=1; i<sliderNums; i++){
       sliders[i].value(preset2[i]); 
       oscillators[i].amp(preset2[i] * output_slider.value() * synthGainFudgeFactor );
     }
@@ -1075,37 +1073,6 @@ function updatePresets(preset_num){
     preset_num[i] = sliders[i].value(); 
   }
 }
-
-//Frequency Adjuster option
-// function frequency_sliders() { 
-//   frequency_bool = !frequency_bool;
-
-//   if (frequency_bool == true) {
-//     frequency_button.style('background-color', '#4400ff');
-
-//     side_bar.redraw(); 
-//     //Frequency Sliders
-//     trebleslider = createSlider(0,15,curr_points[0]); 
-//     trebleslider.position(slide_x, last_button + 105); 
-
-//     midslider = createSlider(0,15,curr_points[1]); 
-//     midslider.position(slide_x, last_button + 85 ); 
-
-//     bassslider = createSlider(0,15,curr_points[2]); 
-//     bassslider.position(slide_x, last_button + 65); 
-      
-//   }
-//   else{
-//     frequency_button.style('background-color', '#ffffff');
-
-//     bassslider.hide(); 
-//     midslider.hide(); 
-//     trebleslider.hide();
-//     side_bar.clear(); 
-//     side_bar.redraw(); 
-//   }
-  
-// }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1284,6 +1251,37 @@ function restartMic() {
 ///////////////////////////////////////////////////////////////////////////////
 
 //OLD CODE 
+//Frequency Adjuster option
+// function frequency_sliders() { 
+//   frequency_bool = !frequency_bool;
+
+//   if (frequency_bool == true) {
+//     frequency_button.style('background-color', '#4400ff');
+
+//     side_bar.redraw(); 
+//     //Frequency Sliders
+//     trebleslider = createSlider(0,15,curr_points[0]); 
+//     trebleslider.position(slide_x, last_button + 105); 
+
+//     midslider = createSlider(0,15,curr_points[1]); 
+//     midslider.position(slide_x, last_button + 85 ); 
+
+//     bassslider = createSlider(0,15,curr_points[2]); 
+//     bassslider.position(slide_x, last_button + 65); 
+      
+//   }
+//   else{
+//     frequency_button.style('background-color', '#ffffff');
+
+//     bassslider.hide(); 
+//     midslider.hide(); 
+//     trebleslider.hide();
+//     side_bar.clear(); 
+//     side_bar.redraw(); 
+//   }
+  
+// }
+
 // function splitOctaves(spectrum, slicesPerOctave) {
 //   fft.analyze(); 
 
