@@ -149,19 +149,30 @@ var o_sketch = function(p) {
 				else if (y_wave.length > 0){
 					p.stroke(255,0,0);
 					p.beginShape();
-					for (i = 0; i < y_wave.length; i++ ) {
+//					for (i = 0; i < y_wave.length; i++ ) {
+					for (i = 0; i < period; i++ ) {
 						vertex(width * i/y_wave.length, -100*(y_wave[i]*wavedraw_scale) + 200 );
 					}			
 					p.endShape();
 				}
 			}
 			
-				p.beginShape();
+			if (envelope_mode) {
+				if (p.drawEnvelope.length > 0) {
+					p.fill(200);
+					p.beginShape();
 
-				for (i = 0; i < p.drawEnvelope.length; i++ ) {
-					vertex(p.drawEnvelope[i][0], p.drawEnvelope[i][1]);
+					for (i = 0; i < p.drawEnvelope.length; i++ ) {
+						vertex(p.drawEnvelope[i][0], p.drawEnvelope[i][1]);
+					}
+					
+					for (i = p.drawEnvelope.length - 1; i >=0 ; i-- ) {
+						vertex(p.drawEnvelope[i][0], 400-p.drawEnvelope[i][1]);
+					}
+					
+					p.endShape();
 				}
-				p.endShape();
+			}
 				
 //			}
 		} 
@@ -186,16 +197,18 @@ var o_sketch = function(p) {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -300 from "main" (spectrum) canvas
 
+		start_point = [p.dot_x,p.dot_y];
+
 		if (wavedraw_mode == true){
 			if (p.dot_y > 100) {
 				waveform_bool = true;
-				p.drawWave = [];
 				//p.drawWave.push([p.dot_x,p.dot_y]);
 			}
 		}
-		if (envelope_bool == true){
+		if (envelope_mode){
 			//p.drawEnvelope.push([p.dot_x,p.dot_y]);
-			p.drawEnvelope = [];
+			envelope_bool = true;
+//			p.drawEnvelope = [];
 		}
 
 		p.dot = true;
@@ -204,39 +217,76 @@ var o_sketch = function(p) {
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas		
-		
-    if (waveform_bool == true){
+		if (waveform_bool){
+			if (start_point.length > 0) {
+				p.drawWave = [];
+				p.drawWave.push(start_point);
+				start_point = [];
+			}
 			p.drawWave.push([p.dot_x,p.dot_y]);
 		}
-		if (envelope_bool == true){
+		if (envelope_bool){
+			if (start_point.length > 0) {
+				p.drawEnvelope = [];
+				p.drawEnvelope.push(start_point);
+				start_point = [];
+			}
 			p.drawEnvelope.push([p.dot_x,p.dot_y]);
 		}
 	}
 
 	p.touchEnded = function() {
-		if ( (waveform_bool) && (p.drawWave.length > 0) ) {
-			num_steps = round(44100/curr_f0);
-			y_wave = new Float32Array(num_steps*1).fill(0.0); 
-		
-			idx = 0;
-			for (i=0; i<num_steps; i++) {
-				x_target = i*(width/num_steps);
-				while ( (idx < p.drawWave.length) && (p.drawWave[idx][0] < x_target )) {
-					idx++;
-				}
-				idx1 = max(idx-1,0);
-				idx2 = min(idx, p.drawWave.length - 1);
-				if (idx2 != idx1) {
-					amt = (x_target - p.drawWave[idx1][0]) / (p.drawWave[idx2][0] - p.drawWave[idx1][0]);
-				} else {
-					amt = 0.0;
-				}
-				
-				for (w=0; w<1; w++) {
-					y_wave[w*num_steps + i] = (lerp(p.drawWave[idx1][1],p.drawWave[idx2][1], amt) - 200)/(-100*wavedraw_scale);
-				}
-			}
+	
+		if ( (waveform_bool) && (p.drawWave.length > 0) && (mouseX > 200) ) {
+			p.updateWaveSynth();
+		}
+		else if (wavedraw_mode) {
+//			envelope.play(synth,0);
+//			synth.play();
+		}
+		else if ( (envelope_bool) && (p.drawEnvelope.length > 0) && (mouseX > 200) ) {
+			p.updateEnvelope();
+		}
+		p.dot = false;
+	}
 
+
+	p.updateWaveSynth = function() {
+		period = round(44100/curr_f0);
+		round_f0 = round(44100/period);
+		
+		num_steps = ceil(44100/curr_f0);
+		synth_len = period * round_f0;
+		if (synth_len < 44100) {
+			synth_len += period;
+		}
+//		num_periods = round(synth_len / round_f0);
+		
+		y_wave = new Float32Array(synth_len).fill(0.0);
+	
+		idx = 0;
+		for (i=0; i<period; i++) {
+			x_target = i*(width/period);
+			while ( (idx < p.drawWave.length) && (p.drawWave[idx][0] < x_target )) {
+				idx++;
+			}
+			idx1 = max(idx-1,0);
+			idx2 = min(idx, p.drawWave.length - 1);
+			if (idx2 != idx1) {
+				amt = (x_target - p.drawWave[idx1][0]) / (p.drawWave[idx2][0] - p.drawWave[idx1][0]);
+			} else {
+				amt = 0.0;
+			}
+			
+			for (w=0; w<round_f0; w++) {
+				y_wave[w*period + i] = (lerp(p.drawWave[idx1][1],p.drawWave[idx2][1], amt) - 200)/(-100*wavedraw_scale);
+			}
+		}
+
+		if (e_wave.length > 0) {
+			p.updateSynth();
+		}
+		else {		
 			if (synth.isPlaying) {
 				synth.stop();
 			}
@@ -245,12 +295,67 @@ var o_sketch = function(p) {
 			fft.setInput(synth);			
 			synth.setBuffer( [y_wave] );
 			synth.setLoop(true);
-			synth.play();
+		
+	//		envelope.setLoop(true);
+	//		envelope.play();
+
+	//		synth.setVolume(envelope);
+	//		envelope.setLoop(true);
+
+	//		envelope.play(synth, 0); //, 0.1);
+			synth.play();  
+		}
+		
+		waveform_bool = false;	
+	}
+	
+
+	p.updateEnvelope = function() {
+		
+		e_wave = new Float32Array(synth_len).fill(0.0);
+	
+		idx = 0;
+		for (i=0; i<synth_len; i++) {
+			x_target = i*(width/synth_len);
+			while ( (idx < p.drawEnvelope.length) && (p.drawEnvelope[idx][0] < x_target )) {
+				idx++;
+			}
+			idx1 = max(idx-1,0);
+			idx2 = min(idx, p.drawEnvelope.length - 1);
+			if (idx2 != idx1) {
+				amt = (x_target - p.drawEnvelope[idx1][0]) / (p.drawEnvelope[idx2][0] - p.drawEnvelope[idx1][0]);
+			} else {
+				amt = 0.0;
+			}
+
+			e_wave[i] = abs( (lerp(p.drawEnvelope[idx1][1],p.drawEnvelope[idx2][1], amt) - 200)/(-100*wavedraw_scale) );
 		}
 
-		waveform_bool = false;
-	
-		p.dot = false;
+		if (y_wave.length > 0) {
+			p.updateSynth();
+		}
+
+		envelope_bool = false;
+	}	
+
+
+	p.updateSynth = function() {
+		ye_wave = new Float32Array(synth_len);
+		
+		for (i=0; i<synth_len; i++) {
+			ye_wave[i] = y_wave[i] * e_wave[i];
+		}
+
+		if (synth.isPlaying()) {
+			synth.stop();
+		}
+
+		synth = new p5.SoundFile();			
+		fft.setInput(synth);			
+		synth.setBuffer( [ye_wave] );
+//			synth.setLoop(true);
+		synth.play();  
 	}
+
 
 }	// End of closure

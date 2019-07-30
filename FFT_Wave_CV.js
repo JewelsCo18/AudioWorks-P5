@@ -3,9 +3,6 @@
 
 var mic, fft, cnv, input, points;
 
-//SideBar Vars
-var curr_subheader; 
-
 //Spectrum Vars
 var divisions = 5;
 // var speed = 1;
@@ -67,7 +64,6 @@ let sidebarWidth = 200;
 //synthesis Vars
 var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start, slider_pos, curr_f0_text; 
 var sliderNums = 17;//starting from 1 not 0 
-//var sliderNums = 10;//starting from 1 not 0 
 var sliders = [];
 var slider_vals = [];  
 var oscillators = [];
@@ -84,6 +80,11 @@ let slider_y_default = 400;
 var y_wave = [];
 let wavedraw_scale = 6;
 
+var preset1 = []; 
+var preset2 = []; 
+var preset1_bool = false; 
+var preset2_bool = false; 
+
 //Colour Vars; 
 var curr_stroke = [255,119,0]; //rgb
 var curr_background = [255,255,255]; //rgb
@@ -92,7 +93,6 @@ var default_bool = false;
 
 //Keyboard Vars; 
 var move_y = 30; 
-var moveable = false; 
 var keyNums = 16 //starting at A3
 var sharp_flatNums = 10 //starting at A3
 var white_key_pos = 230; 
@@ -148,7 +148,29 @@ function setup() {
     oscillators[i].amp(0);
   }
 
-  synth = new p5.SoundFile();  
+  synth = new p5.SoundFile(); 
+
+  /*  envelope = new p5.SoundFile();
+
+  let len = 44100;
+  e_wave = new Float32Array(len).fill(0.0); 
+  
+  for (i=0; i<len; i++) {
+    e_wave[i] = 1 - i/len;    
+  }
+
+  envelope.setBuffer( [e_wave] ); */
+  
+  // Instantiate the envelope
+  envelope = new p5.Envelope();
+
+  // set attackTime, decayTime, sustainRatio, releaseTime
+  envelope.setADSR(0.001, 0.5, 0.1, 0.5); 
+
+  for (i = 0; i<= sliderNums +1; i++){
+    preset1.push(0); 
+    preset2.push(0); 
+  } 
 }
 
 
@@ -333,14 +355,12 @@ function fft_zoom_in() {
     if (fftScale < fftMaxScale-1) {
       fftScale += 1;
     }
-
 //    scrollOffset = 0;
 //    textOffset = 0;
     repositionSliders();  // Re-position sliders
     scrollOffset *= 2;
-    scrollOffset = 0;
-    textOffset = 0;
-//    scrollOffset *= 2;
+//    textOffset *= 2;
+//    console.log(fftScale);  // For debugging
   }
 
 function fft_zoom_out() {
@@ -351,10 +371,8 @@ function fft_zoom_out() {
 //    textOffset = 0;
     repositionSliders();  // Re-position sliders
     scrollOffset = round(scrollOffset/2);
-    scrollOffset = 0;
-    textOffset = 0;
-//    scrollOffset = round(scrollOffset/2);
-
+//    textOffset = round(textOffset/2);
+//    console.log(fftScale);  // For debugging
   }
 
 function zoom_buttons(){
@@ -805,6 +823,11 @@ function synthesizer() {
 
     stopMic();
     fft.setInput(); 
+
+    if (wavedraw_mode) {
+      synth.play(); 
+    } 
+
   }
   else { 
     synthesis_button.style('background-color', '#ffffff');
@@ -822,7 +845,7 @@ function synthesizer() {
       buttons[curr_recorded_sound].hide(); 
     }
     
-    wavedraw_mode = false;
+    // wavedraw_mode = false;
     if ( synth.isPlaying() ) {
       synth.stop();
     }
@@ -899,8 +922,7 @@ function repositionSliders(){
     sliders[i].show();
       }
   }
-    fft.setInput(mic); 
-  }
+}
 
 
 function frequency_change() { 
@@ -958,12 +980,11 @@ function set_waveType(change_wave) {
 }
 
 function wave_drawing(){
-  wavedraw_mode = !wavedraw_mode; 
+  //wavedraw_mode = !wavedraw_mode; 
 
   if (envelope_bool == true){
     envelope_bool == false; 
     draw_envelope_button.style('background-color', '#ffffff');
-    
   }
 
   if (wavedraw_mode == true){
@@ -994,13 +1015,44 @@ function envelope_drawing(){
 }
 
 function set_preset1(){
+  preset1_bool = !preset1_bool
 
+  if (preset1_bool == true){
+    preset1_button.style('background-color', '#4400ff');
 
+    for (i=1; i<sliderNums+1; i++) {
+      sliders[i].value(preset2[i]);
+    }
+  }
+
+  else{
+    preset1_button.style('background-color', '#ffffff');
+    for (i=1; i<sliderNums+1; i++) {
+      preset1.push(sliders[i].value())
+    }
+  }
+  
 }
 
 function set_preset2(){
+  preset2_bool = !preset2_bool
 
+  if (preset2_bool == true){
+    preset2_button.style('background-color', '#4400ff');
+    
+    for (i=1; i<sliderNums+1; i++) {
+      sliders[i].value(preset2[i]);
+    }
+  }
 
+  else{
+    preset2_button.style('background-color', '#ffffff');
+
+    for (i=1; i<sliderNums+1; i++) {
+      preset2.push(sliders[i].value())
+    }
+
+  }
 }
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1205,6 +1257,7 @@ function restartMic() {
     micButton.style('background-color', '#ffffff');
   }
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
