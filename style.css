@@ -92,13 +92,13 @@ canvas {
 	height:50px;
 }
 
-.piano_button_style { /*NOT WORKING FOR SOME REASON*/
+.piano_button_style {
 	background-color: white;
-	height: 200px;
-	width: 200px;
+	height: 30px;
+	width: 70px;
 	font-family: "Times New Roman", Arial, sans-serif;
 	text-align: center;
-	font-size: 48px; 
+	font-size: 28px; 
 	vertical-align: middle;
 	border-radius: 12px;
 }

@@ -1085,12 +1085,12 @@ function access_keyboard(){
 
     recreateKeys();
 
-    left_button = createDiv(" < "); 
-    left_button.style("piano_button_style");
+    left_button = createDiv(" <<< "); 
+    left_button.class("piano_button_style");
     left_button.mousePressed(keyboard_p5.move_left)
 
-    right_button = createDiv(" > "); 
-    right_button.style("piano_button_style"); 
+    right_button = createDiv(" >>> "); 
+    right_button.class("piano_button_style"); 
     right_button.mousePressed(keyboard_p5.move_right);  
 
     keyboard_p5.resizeCanvas(windowWidth-200, windowHeight); 
