@@ -60,11 +60,6 @@ var o_sketch = function(p) {
 			p.stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2]); 
 			p.background(curr_background[0],curr_background[1],curr_background[2]); 
 
-	//      var wave = p.fft.waveform();	// not needed, use fft.waveform()
-			p.wave = p.wave.concat(fft.waveform());
-				// There's no guarantee that successive frames are contiguous (possible dropouts)
-				// Probably want to fix this, at least for synthesis
-			p.wave.splice(0,1024);
 						
 			if (synthesis_bool) {
 				//p.scaleFactor = 0.5 / synthGainFudgeFactor;
@@ -73,8 +68,28 @@ var o_sketch = function(p) {
 				} else {
 					p.scaleFactor = 1;
 				}
+				
+				if (ye_wave_idx + 1024 <= synth_len) {
+					ye_slice = ye_wave.slice( ye_wave_idx, ye_wave_idx+1024 );
+				}
+				else {				
+					ye_slice = ye_wave.slice( ye_wave_idx, synth_len );
+					p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
+					ye_slice = ye_wave.slice( 0, 1024 - (synth_len-ye_wave_idx) );
+				}
+
+				p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
+				ye_wave_idx += 1024;
+				ye_wave_idx %= synth_len;
+				
+				p.wave.splice(0,1024);
+
 			} else {
 				p.scaleFactor = 1;
+				p.wave = p.wave.concat(fft.waveform());
+					// There's no guarantee that successive frames are contiguous (possible dropouts)
+					// Probably want to fix this, at least for synthesis
+				p.wave.splice(0,1024);
 			}
 				
 
@@ -146,7 +161,7 @@ var o_sketch = function(p) {
 					}
 					p.endShape();
 				}
-				else if (y_wave.length > 0){
+/*				else if (y_wave.length > 0){
 					p.stroke(255,0,0);
 					p.beginShape();
 //					for (i = 0; i < y_wave.length; i++ ) {
@@ -154,23 +169,25 @@ var o_sketch = function(p) {
 						vertex(width * i/y_wave.length, -100*(y_wave[i]*wavedraw_scale) + 200 );
 					}			
 					p.endShape();
-				}
+				} */
 			}
 			
 			if (envelope_mode) {
-				if (p.drawEnvelope.length > 0) {
-					p.fill(200);
-					p.beginShape();
+				if (envelope_bool) {
+					if (p.drawEnvelope.length > 0) {
+						p.fill(200);
+						p.beginShape();
 
-					for (i = 0; i < p.drawEnvelope.length; i++ ) {
-						vertex(p.drawEnvelope[i][0], p.drawEnvelope[i][1]);
-					}
+						for (i = 0; i < p.drawEnvelope.length; i++ ) {
+							vertex(p.drawEnvelope[i][0], p.drawEnvelope[i][1]);
+						}
 					
-					for (i = p.drawEnvelope.length - 1; i >=0 ; i-- ) {
-						vertex(p.drawEnvelope[i][0], 400-p.drawEnvelope[i][1]);
-					}
+						for (i = p.drawEnvelope.length - 1; i >=0 ; i-- ) {
+							vertex(p.drawEnvelope[i][0], 400-p.drawEnvelope[i][1]);
+						}
 					
-					p.endShape();
+						p.endShape();
+					}
 				}
 			}
 				
@@ -201,13 +218,13 @@ var o_sketch = function(p) {
 
 		if (wavedraw_mode == true){
 			if (p.dot_y > 100) {
-				waveform_bool = true;
+//				waveform_bool = true;
 				//p.drawWave.push([p.dot_x,p.dot_y]);
 			}
 		}
 		if (envelope_mode){
 			//p.drawEnvelope.push([p.dot_x,p.dot_y]);
-			envelope_bool = true;
+//			envelope_bool = true;
 //			p.drawEnvelope = [];
 		}
 
@@ -217,16 +234,18 @@ var o_sketch = function(p) {
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas		
-		if (waveform_bool){
-			if (start_point.length > 0) {
+		if (wavedraw_mode){
+			if ( (start_point.length > 0) && (start_point[0] > 0) ) {
+				waveform_bool = true;
 				p.drawWave = [];
 				p.drawWave.push(start_point);
 				start_point = [];
 			}
 			p.drawWave.push([p.dot_x,p.dot_y]);
 		}
-		if (envelope_bool){
-			if (start_point.length > 0) {
+		if (envelope_mode){
+			if ( (start_point.length > 0) && (start_point[0] > 0) ) {
+				envelope_bool = true;
 				p.drawEnvelope = [];
 				p.drawEnvelope.push(start_point);
 				start_point = [];
@@ -240,12 +259,12 @@ var o_sketch = function(p) {
 		if ( (waveform_bool) && (p.drawWave.length > 0) && (mouseX > 200) ) {
 			p.updateWaveSynth();
 		}
-		else if (wavedraw_mode) {
-//			envelope.play(synth,0);
-//			synth.play();
-		}
 		else if ( (envelope_bool) && (p.drawEnvelope.length > 0) && (mouseX > 200) ) {
 			p.updateEnvelope();
+		}
+		else if ( (wavedraw_mode) || (envelope_mode) ) {
+//			envelope.play(synth,0);
+			synth.play();
 		}
 		p.dot = false;
 	}
@@ -345,6 +364,7 @@ var o_sketch = function(p) {
 		for (i=0; i<synth_len; i++) {
 			ye_wave[i] = y_wave[i] * e_wave[i];
 		}
+		ye_wave_idx = 0;
 
 		if (synth.isPlaying()) {
 			synth.stop();

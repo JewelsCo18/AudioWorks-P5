@@ -84,6 +84,7 @@ let slider_y_default = 400;
 var y_wave = [];
 var e_wave = [];
 var ye_wave = [];
+var ye_wave_idx = 0;
 let wavedraw_scale = 1;
 var synth_len = 44100; // One second, initially
 var preset1 = []; 
@@ -166,22 +167,14 @@ function setup() {
   }
 
 	synth = new p5.SoundFile();
-/*	envelope = new p5.SoundFile();
-
-	let len = 44100;
-	e_wave = new Float32Array(len).fill(0.0); 
-	
-	for (i=0; i<len; i++) {
-		e_wave[i] = 1 - i/len;		
-	}
-
-	envelope.setBuffer( [e_wave] );	*/
+	e_wave = new Float32Array(synth_len).fill(1.0); 
+	ye_wave = new Float32Array(synth_len).fill(0.0); 
 	
 	// Instantiate the envelope
-	envelope = new p5.Envelope();
+//	envelope = new p5.Envelope();
 
 	// set attackTime, decayTime, sustainRatio, releaseTime
-	envelope.setADSR(0.001, 0.5, 0.1, 0.5);	
+//	envelope.setADSR(0.001, 0.5, 0.1, 0.5);	
 }
 
 
@@ -598,7 +591,7 @@ var side_bar = function(p) {
     overall_frequency_slider.size(170); 
     overall_frequency_slider.position(header_x, synthesis_slider_start + 65); 
     overall_frequency_slider.style('background-color', string_colors);
-    overall_frequency_slider.input(repositionSliders); // set callback for value changes
+    overall_frequency_slider.input(update_f0); // set callback for value changes
 
     output_slider = createSlider(0,1,1,0); 
     output_slider.size(170);
@@ -877,6 +870,7 @@ function synthesizer() {
   }
 }
 
+
 function hide_synthesis(){
   synthesis_header.hide(); 
   ff1_header.hide(); 
@@ -894,7 +888,13 @@ function hide_synthesis(){
   overall_frequency_slider.hide(); 
   frequency_input.hide();
   output_slider.hide(); 
-  output_slider_input.hide(); 
+  output_slider_input.hide();
+  
+  // Hide any synthesis drawing waves / envelopes
+  wavedraw_mode = false;
+  waveform_bool = false;
+  envelope_mode = false;
+  envelope_bool = false; 
 
 }
 
@@ -936,6 +936,8 @@ function update_output_gain() {
 function updateSlider(idx) {
 	return function() {
 		oscillators[idx].amp( sliders[idx].value() * output_slider.value() * synthGainFudgeFactor );
+
+		recomputeWave();
 	}
 }
 
@@ -948,7 +950,6 @@ function repositionSliders(){
 
 	// Update values
 	curr_f0 = overall_frequency_slider.value();
-	frequency_input.value(curr_f0);
 
 	for (i=1; i<sliderNums+1; i++) {
 		slider_pos = round( width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) ) + slider_x_offset;
@@ -975,7 +976,43 @@ function frequency_change() {
 //  overall_frequency_slider.value(frequency_input.value()); 
   overall_frequency_slider.value(curr_f0);
   repositionSliders();
+  recomputeWave();
 }
+
+function update_f0() {
+	frequency_input.value(curr_f0);
+	repositionSliders();
+	recomputeWave();
+}
+
+function recomputeWave() {
+	period = round(44100/curr_f0);
+	round_f0 = round(44100/period);
+	
+	synth_len = period * round_f0;
+	if (synth_len < 44100) {
+		synth_len += period;
+	}
+	
+	if (y_wave.length != synth_len) {
+		y_wave = [];
+		y_wave = new Float32Array(synth_len);
+		ye_wave = [];
+		ye_wave = new Float32Array(synth_len);			
+	}
+
+	for (i=0; i<synth_len; i++) {
+		y_wave[i] = 0;
+		for (s=1; s<=sliderNums; s++) {
+			x = i/44100;
+			y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+		}
+		
+		ye_wave[i] = y_wave[i] * e_wave[i];
+	}
+	ye_wave_idx = 0;
+}
+
 
 function input_change(){
 	input_gain = parseFloat( input_slider_input.value() );
@@ -1041,6 +1078,7 @@ function wave_drawing(){
     draw_wave_button.style('background-color', '#ffffff');
   }
 
+	stopOscillators();
 }
 
 function envelope_drawing(){
@@ -1058,6 +1096,8 @@ function envelope_drawing(){
   else{
     draw_envelope_button.style('background-color', '#ffffff');
   }
+  
+  stopOscillators();
 
 }
 
@@ -1248,6 +1288,8 @@ function stopMic() {
 //    mic.stop();
     micOn = false;
     mic.amp(0.0);
+//    mic.stop();
+//    fft.setInput();
     micButton.style('background-color','#888888');
     micButton.html("Mic OFF");       
 //  }
@@ -1260,6 +1302,7 @@ function restartMic() {
     pause_fft = 0; 
 //    mic.start();
 	mic.amp(input_gain);
+//	fft.setInput(mic);		// Doesn't work
     micOn = true;
     micButton.html('Mic ON');
     micButton.style('background-color', '#4400ff');
@@ -1272,6 +1315,13 @@ function restartMic() {
     micButton.style('background-color', '#ffffff');
   }
 }
+
+function stopOscillators() {
+	for (idx=1; idx<=sliderNums; idx++) {
+		oscillators[idx].stop();
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
