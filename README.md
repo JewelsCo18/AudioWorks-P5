@@ -6,9 +6,9 @@ Developing version of Audioworks using the P5 libary
 - Compatible with Chrome and Safari
 - Capable of:
   - recording sound
-  - colour changing 
   - synthesizing sound 
+  - displaying real time fft and waveforms
+  - colour changing 
 
 # Current Issues/Goals: 
-- Slow graphics
 
