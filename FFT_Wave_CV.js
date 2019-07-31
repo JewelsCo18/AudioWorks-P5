@@ -61,6 +61,7 @@ var synthesis_bool = false;
 var last_button;
 var colour_button_pos;
 let sidebarWidth = 200; 
+var recording_adjustment = 50; 
 
 //synthesis Vars
 var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start, slider_pos; 
@@ -248,7 +249,9 @@ function touchMoved() {
     scrollCurX = mouseX;
     scrollCurY = mouseY;
     
-    repositionSliders();  
+    if (synthesis_bool == true){
+      repositionSliders(); 
+    }
   }
 }
 
@@ -416,17 +419,17 @@ var side_bar = function(p) {
     input_header.class('subheader_text_style'); 
     input_header.position(header_x-80, 95); 
 
-    mic_input_slider = createSlider(0,5,1,0); 
-    mic_input_slider.size(170);
-    mic_input_slider.position(header_x+5, 120); 
-    mic_input_slider.style('background-color', string_colors);
-    mic_input_slider.input(update_input_gain); 
-
     input_slider_input = createInput("1.0"); 
-    input_slider_input.size(40); 
-    input_slider_input.position(header_x +130, 95); 
+    input_slider_input.size(25); 
+    input_slider_input.position(header_x, 118); 
     input_slider_input.input(input_change);
   //  input_slider_input.value(input_gain);
+
+    mic_input_slider = createSlider(0,5,1,0); 
+    mic_input_slider.size(140);
+    mic_input_slider.position(header_x+40, 120); 
+    mic_input_slider.style('background-color', string_colors);
+    mic_input_slider.input(update_input_gain); 
 
     sound_button = createDiv("Sound Recorder"); 
     sound_button.class('subheader_style'); 
@@ -448,8 +451,8 @@ var side_bar = function(p) {
     colour_button = createDiv("Colour Adjuster"); 
     colour_button.class('subheader_style'); 
     colour_button.mousePressed(colour_adjustment); 
-    colour_button.position(header_x, windowHeight-10-70); 
-    colour_button_pos = windowHeight-10-colour_button.height - 70;
+    colour_button.position(header_x, windowHeight-40); 
+    colour_button_pos = windowHeight-10-colour_button.height - 30;
 
     //MIC SECTION 
 
@@ -461,7 +464,7 @@ var side_bar = function(p) {
       buttons[i] = createDiv('Record sound '+ (i+1));
       buttons[i].class('mic_style');
       buttons[i].mousePressed( toggleButton(i) );
-      buttons[i].position(10,i*45 + last_button + 55);
+      buttons[i].position(header_x,i*45 + last_button + 55);
       buttonState[i] = 0;
        
       // this sound file will be used to
@@ -477,80 +480,63 @@ var side_bar = function(p) {
     synthesis_header.class('subheader_text_style'); 
     synthesis_header.position(header_x-10, last_button + 27);
 
-    var recording_adjustment = 50; 
-
     keyboard_button = createDiv(" "); 
     keyboard_button.class("keyboard_style"); 
     keyboard_button.mousePressed(access_keyboard); 
-    keyboard_button.position(header_x + 10, last_button + recording_adjustment);
 
     slider_button = createDiv(" "); 
     slider_button.class("slider_display_style"); 
     slider_button.style('background-color', '#4400ff');
     slider_button.mousePressed(show_sliders); 
-    slider_button.position(header_x + 70, last_button + recording_adjustment); 
 
     wave_button = createDiv(" "); 
     wave_button.class("waveType_style"); 
     wave_button.mousePressed(set_waveType('sine')); 
-    wave_button.position(header_x + 130, last_button + recording_adjustment); 
-
-    icon_end = last_button + recording_adjustment + 40; //50 is how large the icon currently is 
 
     draw_wave_button = createDiv("Draw Waveform"); 
     draw_wave_button.class("button_style"); 
     draw_wave_button.mousePressed(wave_drawing); 
-    draw_wave_button.position(header_x, icon_end + 15); 
 
     draw_envelope_button = createDiv("Draw Envelope"); 
     draw_envelope_button.class("button_style"); 
     draw_envelope_button.mousePressed(envelope_drawing); 
-    draw_envelope_button.position(header_x, icon_end + 55); 
 
     preset1_button = createDiv("Preset 1"); 
     preset1_button.class("button_style"); 
     preset1_button.mousePressed(set_preset1); 
-    preset1_button.position(header_x, icon_end + 95);
 
     preset2_button = createDiv("Preset 2"); 
     preset2_button.class("button_style"); 
-    preset2_button.mousePressed(set_preset2); 
-    preset2_button.position(header_x, icon_end + 135);  
-
-    synthesis_slider_start = preset2_button.y+ preset2_button.height; 
+    preset2_button.mousePressed(set_preset2);   
 
     ff1_header = createDiv('Fundamental Frequency:'); 
     ff1_header.class('subheader_text_style'); 
-    ff1_header.position(header_x-20, synthesis_slider_start + 30);
 
     output_header = createDiv('Output:'); 
     output_header.class('subheader_text_style'); 
-    output_header.position(header_x-75, synthesis_slider_start+90); 
 
     frequency_input = createInput(""); 
-    frequency_input.size(25); 
-    frequency_input.position(header_x, synthesis_slider_start+55); 
+    frequency_input.size(25);  
     frequency_input.style("height", "20px"); 
     frequency_input.input(frequency_change); 
     frequency_input.value(curr_f0);
 
     overall_frequency_slider = createSlider(50,1000,curr_f0,0);
-    overall_frequency_slider.size(140); 
-    overall_frequency_slider.position(header_x + 40, synthesis_slider_start + 60); 
+    overall_frequency_slider.size(140);  
     overall_frequency_slider.style('background-color', string_colors);
     overall_frequency_slider.input(update_f0); // set callback for value changes
 
     output_slider = createSlider(0,1,curr_output,0); 
-    output_slider.size(140);
-    output_slider.position(header_x + 40, synthesis_slider_start+118); 
+    output_slider.size(140); 
     output_slider.style('background-color', string_colors);
     output_slider.input(update_output_gain);
 
     output_slider_input = createInput(""); 
     output_slider_input.size(25); 
-    output_slider_input.position(header_x, synthesis_slider_start + 115); 
     output_slider_input.value(curr_output); 
     output_slider_input.input(output_change);  
+
+    synthesis_positions(); 
 
     hide_synthesis() //to ensure that everything is hidden initially 
 
@@ -613,7 +599,7 @@ var side_bar = function(p) {
     var last_button = synthesis_button.y +synthesis_button.height/2; 
 
     //Headers
-    p.textSize(36); 
+    p.textSize(33); 
     p.text('AudioWorks', header_x,35);
 
     // if (frequency_bool == true){
@@ -659,7 +645,13 @@ function sound_recorder() {
   if (synthesis_bool == true){
     synthesis_button.style('background-color', '#ffffff');
     synthesis_bool = false; 
-    hide_synthesis(); 
+    hide_synthesis();
+
+    for (i = 1; i < sliderNums+1; i++) { 
+      sliders[i].hide(); 
+      oscillators[i].stop(); 
+    }
+
   }
 
   if (sound_bool == true) {
@@ -694,11 +686,14 @@ function synthesizer() {
   if (sound_bool == true && curr_recorded_sound != null){
     sound_button.style('background-color', '#ffffff');
     sound_bool = false; 
+    mic_header.hide();
 
     for (i=0; i<=NumButtons-1; i++){
-      if (buttonState[i] == 2){
+      if (curr_recorded_sound == i){
         buttons[i].position(header_x, last_button + 50); 
         recording_adjustment = 90; 
+        synthesis_positions(); 
+        recording_adjustment = 50; 
       }
       else{
         buttons[i].hide(); 
@@ -708,7 +703,14 @@ function synthesizer() {
   else if (sound_bool == true) {
     sound_button.style('background-color', '#ffffff');
     sound_bool = false;
+    recording_adjustment = 50; 
+    synthesis_positions(); 
+    mic_header.hide();
     hide_micButtons(); 
+  }
+  else{
+    recording_adjustment = 50; 
+    synthesis_positions(); 
   }
 
   // Activate and show synthesizer
@@ -768,22 +770,46 @@ function synthesizer() {
 
     restartMic();
     fft.setInput(mic); 
-    hide_synthesis(); 
+    hide_synthesis();
 
     for (i = 1; i < sliderNums+1; i++) { 
       sliders[i].hide(); 
       oscillators[i].stop(); 
     }
 
-    if (curr_recorded_sound!= null){
-      buttons[curr_recorded_sound].hide(); 
+    if (curr_recorded_sound != null){
+      hide_micButtons();  
     }
     
     // wavedraw_mode = false;
     if ( synth.isPlaying() ) {
       synth.stop();
     }
+
+    for (i = 0; i< NumButtons; i++){
+      buttons[i].position(10,i*45 + last_button + 55);
+    }
   }
+}
+
+function synthesis_positions(){
+    keyboard_button.position(header_x + 10, last_button + recording_adjustment);
+    slider_button.position(header_x + 70, last_button + recording_adjustment); 
+    wave_button.position(header_x + 130, last_button + recording_adjustment); 
+
+    icon_end = last_button + recording_adjustment + 40; //50 is how large the icon currently is 
+
+    draw_wave_button.position(header_x, icon_end + 15); 
+    draw_envelope_button.position(header_x, icon_end + 55); 
+    preset1_button.position(header_x, icon_end + 95);
+    preset2_button.position(header_x, icon_end + 135);
+    synthesis_slider_start = preset2_button.y+ preset2_button.height; 
+    ff1_header.position(header_x-20, synthesis_slider_start + 30);
+    output_header.position(header_x-75, synthesis_slider_start+90); 
+    frequency_input.position(header_x, synthesis_slider_start+55);
+    overall_frequency_slider.position(header_x + 40, synthesis_slider_start + 60);
+    output_slider.position(header_x + 40, synthesis_slider_start+118);
+    output_slider_input.position(header_x, synthesis_slider_start + 115); 
 }
 
 function hide_synthesis(){
@@ -1024,6 +1050,7 @@ function set_preset1(){
       sliders[i].value(preset1[i]); 
       oscillators[i].amp(preset1[i] * output_slider.value() * synthGainFudgeFactor );
     }
+    recomputeWave(); 
   }
 
   else{
@@ -1033,13 +1060,13 @@ function set_preset1(){
 
 function set_preset2(){
   preset2_bool = !preset2_bool
-
   if (preset2_bool == true){
     preset2_button.style('background-color', '#4400ff');
     for (i=1; i<sliderNums; i++){
       sliders[i].value(preset2[i]); 
       oscillators[i].amp(preset2[i] * output_slider.value() * synthGainFudgeFactor );
     }
+    recomputeWave(); 
   }
 
   else{
@@ -1244,14 +1271,14 @@ function toggleButton(idx) {
       // send result to soundFile
       recorder.stop();
 
-      buttons[idx].html('Play sound '+idx);
+      buttons[idx].html('Play sound '+(idx+1));
       buttons[idx].style('background-color','#00cc00');
       buttonState[idx] = 2;
     }
     else if (buttonState[idx] === 2) {
     stopMic();
 
-      buttons[idx].html('Pause sound '+idx);
+      buttons[idx].html('Pause sound '+(idx+1));
       buttons[idx].style('background-color','#cccccc');
       buttonState[idx] = 3;
 
@@ -1265,9 +1292,9 @@ function toggleButton(idx) {
     else if (buttonState[idx] == 3) {
     stopMic();
 
-      buttons[idx].html('Play sound '+idx);
+      buttons[idx].html('Play sound '+(idx+1));
       buttons[idx].style('background-color','#00cc00');
-    buttonState[idx] = 2;
+      buttonState[idx] = 2;
 
       fft.setInput(soundFile[idx]);
       soundFile[idx].pause(); // play the result!    
@@ -1279,7 +1306,7 @@ function toggleButton(idx) {
 function donePlaying(idx) {
 
   return function() {
-    buttons[idx].html('Play sound '+idx);
+    buttons[idx].html('Play sound '+(idx+1));
     buttons[idx].style('background-color','#00cc00');
     buttonState[idx] = 2;
   }
