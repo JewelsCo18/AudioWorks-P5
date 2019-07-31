@@ -17,8 +17,7 @@ var keyboard_sketch = function(p){
 			p.loop(); 
 			p.clear(); 
 
-			p.fill(68,0,255);
-			p.rect(30,move_y,windowWidth, 50);
+			move_box.position(230, move_y);
 
 			left_button.position((windowWidth/3.3), move_y+7); 
 			right_button.position((windowWidth/1.15), move_y+7);
@@ -61,10 +60,7 @@ var keyboard_sketch = function(p){
 					black_key_pos += space * 1.25; 
 				}
 			}
-			black_key_pos = 255; 
-		}
-		else{
-			p.noLoop(); 
+			black_key_pos = 265; 
 		}
 	}
 
@@ -90,17 +86,24 @@ var keyboard_sketch = function(p){
 		}
 	}
 
-	p.mousePressed = function(){
+	p.touchStarted = function(){
 		initial_x = p.mouseX; 
-		initial_y = p.mouseY; 
+		initial_y = p.mouseY;
+		if (230<= initial_x && initial_x <= windowWidth && move_y <= initial_y && initial_y <= move_y + 90){
+			moveable = true; 
+		} 
 	}
 
-	p.mouseDragged = function(){ //WONT GO UP FOR SOME REASON!!!
-		if (230<= initial_x && initial_x <= windowWidth && move_y <= initial_y && initial_y <= move_y + 90){
+	p.touchMoved = function(){
+		if (moveable == true){
 			p.loop(); 
 			move_y = p.mouseY;  
 		}
-	} 			 
+	} 
+
+	p.touchEnded = function(){
+		moveable = false; 
+	}			 
 }
 
 function playNote(num){

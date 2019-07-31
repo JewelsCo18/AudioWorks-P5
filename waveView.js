@@ -59,8 +59,7 @@ var o_sketch = function(p) {
 
 			p.stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2]); 
 			p.background(curr_background[0],curr_background[1],curr_background[2]); 
-
-						
+		
 			if (synthesis_bool) {
 				//p.scaleFactor = 0.5 / synthGainFudgeFactor;
 				if (wavedraw_mode) {
