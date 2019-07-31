@@ -552,7 +552,7 @@ var side_bar = function(p) {
     background_header.position(header_x-45, colour_button_pos - 90); 
 
     default_button = createButton("Default"); 
-    default_button.position(header_x + 120, colour_button_pos - 210); 
+    default_button.position(header_x + 120, colour_button_pos - 215); 
     default_button.mousePressed(default_setting); 
 
     //Stroke Sliders
