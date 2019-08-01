@@ -17,5 +17,4 @@ Developing version of Audioworks using the P5 libary
 - can't use presets once waveform/envelope has been used
 - sliders and waveform are slow
 - pause function for sound recorder doesn't pause fft just remove sounds
-- keyboard sound must also be affected by output slider 
 - updating and repositioning sliders are slow
