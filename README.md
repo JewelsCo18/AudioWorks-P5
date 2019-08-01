@@ -12,9 +12,7 @@ Developing version of Audioworks using the P5 libary
 
 # Current Issues/Goals: 
 - waveform and envelope line is off when drawing
-- can't turn waveform and envelope synths off after drawing 
-- waveform and envelope sound always set to maximum despite output
-- can't use presets once waveform/envelope has been used
+- in waveform/envelope mode, envelope sound keeps playing not waveform 
 - sliders and waveform are slow
 - pause function for sound recorder doesn't pause fft just remove sounds
 - updating and repositioning sliders are slow
