@@ -128,11 +128,13 @@ function playNote(num){
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
 		//print("white", new_frequency, num);
 		note.freq(new_frequency); 
+		note.amp(output_slider.value());
+
 		note.fade(0.5,0.2); 
 
 		setTimeout(function() {
 		    note.fade(0,0.5);
-		},75);
+		},100);
 	}
 }
 
@@ -157,12 +159,13 @@ function playFlat(num){
 
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
 		//print("flat", new_frequency);
-		note.freq(new_frequency); 
+		note.freq(new_frequency);
+		note.amp(output_slider.value());  
 		note.fade(0.5,0.2); 
 
 		setTimeout(function() {
 		    note.fade(0,0.5);
-		},75);
+		},100);
 	}
 }
 

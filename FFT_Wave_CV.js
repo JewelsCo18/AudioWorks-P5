@@ -926,39 +926,32 @@ function update_f0() {
 }
 
 function recomputeWave() {
-//	period = round(44100/curr_f0);
-//	round_f0 = round(44100/period);
-	period = round(2048/curr_f0);
-	round_f0 = round(2048/period);
-	
-//	synth_len = period * round_f0;
-	display_len = period * round_f0;
-//	if (synth_len < 44100) {
-	if (display_len < 2048) {
-		display_len += period;
-	}
-	
-	if (y_wave.length != display_len) {
-//		y_wave = [];
-//		y_wave = new Float32Array(synth_len);
-		ye_wave = [];
-		ye_wave = new Float32Array(synth_len);			
-	}
+  period = round(44100/curr_f0);
+  round_f0 = round(44100/period);
+  
+  synth_len = period * round_f0;
+  if (synth_len < 44100) {
+    synth_len += period;
+  }
+  
+  if (y_wave.length != synth_len) {
+    y_wave = [];
+    y_wave = new Float32Array(synth_len);
+    ye_wave = [];
+    ye_wave = new Float32Array(synth_len);      
+  }
 
-	for (i=0; i<display_len; i++) {
-//		y_wave[i] = 0;
-		ye_wave[i] = 0;
-		for (s=1; s<=sliderNums; s++) {
-			x = i/44100;
-//			y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
-			ye_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
-		}
-		
-//		ye_wave[i] = y_wave[i] * e_wave[i];
-	}
-	ye_wave_idx = 0;
+  for (i=0; i<synth_len; i++) {
+    y_wave[i] = 0;
+    for (s=1; s<=sliderNums; s++) {
+      x = i/44100;
+      y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x); 
+    }
+    
+    ye_wave[i] = y_wave[i] * e_wave[i];
+  }
+  ye_wave_idx = 0;
 }
-
 
 
 function input_change(){
@@ -974,10 +967,38 @@ function output_change() {
   }    
 }
 
-function updateWaveType(){
-  for (i = 1; i <= sliderNums; i++) {
-      oscillators[i].setType(curr_wave); 
+function updateWaveType(wave_type){
+
+  if (wave_type == 'sine'){
+    for (i = 1; i <= sliderNums; i++){
+      if (i != 1){
+        oscillators[i].amp(0); 
+        sliders[i].value(0); 
+      }
+    }
   }
+  else if (wave_type == 'square'){
+    for (i = 1; i <= sliderNums; i++){
+      if (i%2 == 0){
+        oscillators[i].amp(0); 
+        sliders[i].value(0);
+      }
+      else{
+        var inverse_num = 1/i; 
+        oscillators[i].amp(inverse_num * output_slider.value() * synthGainFudgeFactor); 
+        sliders[i].value(oscillators[i].amp());
+      } 
+    }
+  }
+  else if (wave_type == 'saw'){
+    for (i = 1; i<= sliderNums; i++){
+      var inverse_num = 1/i;
+      oscillators[i].amp(inverse_num * output_slider.value() * synthGainFudgeFactor); 
+      sliders[i].value(oscillators[i].amp());  
+    }
+  }
+  recomputeWave(); 
+
 }
 
 //Oscillator Wave Settings 
@@ -988,28 +1009,29 @@ function set_waveType(change_wave) {
     // make sure user enabled the mic
     if (change_wave === 'sine') {
       wave_button.style('background-image', "url(square_icon.png)");
-      curr_wave = 'square';
       change_wave = 'square';//this is so that the toggle keeps on moving 
-      updateWaveType(); 
+      //curr_wave = 'square';
+      
     }
     else if (change_wave === 'square') {  
       wave_button.style('background-image', "url(sawtooth_icon.png)");  
-      curr_wave = 'sawtooth';
       change_wave = 'saw';
-      updateWaveType();  
+      //curr_wave = 'sawtooth';
+       
     }
     else if (change_wave === 'saw') {
       wave_button.style('background-image', "url(sine_icon.png)"); 
-      curr_wave = 'sine';
       change_wave = 'sine';
-      updateWaveType(); 
+      //curr_wave = 'sine';
+      
     }
+    updateWaveType(change_wave); 
   }
 }
 
 function wave_drawing(){
-  // wavedraw_mode = !wavedraw_mode; 
-  wavedraw_mode = true;
+  wavedraw_mode = !wavedraw_mode; 
+  //wavedraw_mode = true;
   
   if (envelope_mode){
     envelope_mode = false; 
@@ -1020,17 +1042,20 @@ function wave_drawing(){
   if (wavedraw_mode == true){
     draw_wave_button.style('background-color', '#4400ff');
 
+    stopOscillators();
+
   }
   else{
     draw_wave_button.style('background-color', '#ffffff');
+    startOscillators(); 
   }
 
-  stopOscillators();
+  
 }
 
 function envelope_drawing(){
-  // envelope_mode = !envelope_mode; 
-  envelope_mode = true;
+  envelope_mode = !envelope_mode; 
+  //envelope_mode = true;
   
   if (wavedraw_mode){
     draw_wave_button.style('background-color', '#ffffff');
@@ -1039,13 +1064,28 @@ function envelope_drawing(){
 
   if (envelope_mode){
     draw_envelope_button.style('background-color', '#4400ff');
+
+    stopOscillators();
   }
   else{
     draw_envelope_button.style('background-color', '#ffffff');
+    startOscillators(); 
   }
   
-  stopOscillators();
+  
 
+}
+
+function stopOscillators() {
+  for (idx=1; idx<=sliderNums; idx++) {
+    oscillators[idx].stop();
+  }
+}
+
+function startOscillators() {
+  for (idx=1; idx<=sliderNums; idx++) {
+    oscillators[idx].start();
+  }
 }
 
 function set_preset1(){
@@ -1304,7 +1344,7 @@ function toggleButton(idx) {
       buttonState[idx] = 2;
 
       fft.setInput(soundFile[idx]);
-      soundFile[idx].pause(); // play the result!    
+      soundFile[idx].pause(); // play the result!   
     
     }
   }
