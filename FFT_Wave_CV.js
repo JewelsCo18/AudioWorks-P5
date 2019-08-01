@@ -900,32 +900,39 @@ function update_f0() {
 }
 
 function recomputeWave() {
-  period = round(44100/curr_f0);
-  round_f0 = round(44100/period);
-  
-  synth_len = period * round_f0;
-  if (synth_len < 44100) {
-    synth_len += period;
-  }
-  
-  if (y_wave.length != synth_len) {
-    y_wave = [];
-    y_wave = new Float32Array(synth_len);
-    ye_wave = [];
-    ye_wave = new Float32Array(synth_len);      
-  }
+//	period = round(44100/curr_f0);
+//	round_f0 = round(44100/period);
+	period = round(2048/curr_f0);
+	round_f0 = round(2048/period);
+	
+//	synth_len = period * round_f0;
+	display_len = period * round_f0;
+//	if (synth_len < 44100) {
+	if (display_len < 2048) {
+		display_len += period;
+	}
+	
+	if (y_wave.length != display_len) {
+//		y_wave = [];
+//		y_wave = new Float32Array(synth_len);
+		ye_wave = [];
+		ye_wave = new Float32Array(synth_len);			
+	}
 
-  for (i=0; i<synth_len; i++) {
-    y_wave[i] = 0;
-    for (s=1; s<=sliderNums; s++) {
-      x = i/44100;
-      y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x); 
-    }
-    
-    ye_wave[i] = y_wave[i] * e_wave[i];
-  }
-  ye_wave_idx = 0;
+	for (i=0; i<display_len; i++) {
+//		y_wave[i] = 0;
+		ye_wave[i] = 0;
+		for (s=1; s<=sliderNums; s++) {
+			x = i/44100;
+//			y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+			ye_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+		}
+		
+//		ye_wave[i] = y_wave[i] * e_wave[i];
+	}
+	ye_wave_idx = 0;
 }
+
 
 
 function input_change(){
