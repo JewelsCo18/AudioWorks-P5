@@ -62,6 +62,8 @@ var o_sketch = function(p) {
 
 						
 			if (synthesis_bool) {
+				waveScale = 1;	// Force max zoom for synth mode
+				
 				//p.scaleFactor = 0.5 / synthGainFudgeFactor;
 				if (wavedraw_mode) {
 					p.scaleFactor = wavedraw_scale;
@@ -69,20 +71,22 @@ var o_sketch = function(p) {
 					p.scaleFactor = 1;
 				}
 				
-				if (ye_wave_idx + 1024 <= synth_len) {
+/*				if (ye_wave_idx + 1024 <= synth_len) {
 					ye_slice = ye_wave.slice( ye_wave_idx, ye_wave_idx+1024 );
 				}
 				else {				
 					ye_slice = ye_wave.slice( ye_wave_idx, synth_len );
 					p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
 					ye_slice = ye_wave.slice( 0, 1024 - (synth_len-ye_wave_idx) );
-				}
+				} */
 
-				p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
-				ye_wave_idx += 1024;
-				ye_wave_idx %= synth_len;
+//				p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
+				p.wave = p.wave.concat( Array.prototype.slice.call( ye_wave.slice(0,2048) ) );
+
+//				ye_wave_idx += 1024;
+//				ye_wave_idx %= synth_len;
 				
-				p.wave.splice(0,1024);
+				p.wave.splice(0,2048);
 
 			} else {
 				p.scaleFactor = 1;
@@ -235,7 +239,8 @@ var o_sketch = function(p) {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas		
 		if (wavedraw_mode){
-			if ( (start_point.length > 0) && (start_point[0] > 0) ) {
+			// Check if touch points are "in canvas"
+			if ( (start_point.length > 0) && (start_point[0] > 0) && (start_point[1] < 300) ) {
 				waveform_bool = true;
 				p.drawWave = [];
 				p.drawWave.push(start_point);
@@ -244,7 +249,8 @@ var o_sketch = function(p) {
 			p.drawWave.push([p.dot_x,p.dot_y]);
 		}
 		if (envelope_mode){
-			if ( (start_point.length > 0) && (start_point[0] > 0) ) {
+			// Check if touch points are "in canvas"
+			if ( (start_point.length > 0) && (start_point[0] > 0) && (start_point[1] < 300) ) {
 				envelope_bool = true;
 				p.drawEnvelope = [];
 				p.drawEnvelope.push(start_point);
@@ -350,19 +356,36 @@ var o_sketch = function(p) {
 			e_wave[i] = abs( (lerp(p.drawEnvelope[idx1][1],p.drawEnvelope[idx2][1], amt) - 200)/(-100*wavedraw_scale) );
 		}
 
-		if (y_wave.length > 0) {
+//		if (y_wave.length > 0) {
 			p.updateSynth();
-		}
+//		}
 
 		envelope_bool = false;
 	}	
 
 
 	p.updateSynth = function() {
+		ye_wave = [];
 		ye_wave = new Float32Array(synth_len);
+
+		if (y_wave.length != synth_len) {
+			y_wave = [];
+			y_wave = new Float32Array(synth_len).fill(0.0);
+			
+			for (i=0; i<synth_len; i++) {
+//				y_wave[i] = 0;
+				for (s=1; s<=sliderNums; s++) {
+					x = i/44100;
+					y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+				}
 		
-		for (i=0; i<synth_len; i++) {
-			ye_wave[i] = y_wave[i] * e_wave[i];
+				ye_wave[i] = y_wave[i] * e_wave[i];
+			}
+		}
+		else {			
+			for (i=0; i<synth_len; i++) {
+				ye_wave[i] = y_wave[i] * e_wave[i];
+			}
 		}
 		ye_wave_idx = 0;
 
