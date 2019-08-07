@@ -43,8 +43,8 @@ var keyboard_sketch = function(p){
 			}
 			white_key_pos = 230; 
 
-			var counter = 0; 
-			var space = (((windowWidth - 200)/keyNums)-1)/1.5;
+			var counter = 0; //checking for when to put larger or smaller space
+			var space = (((windowWidth - 200)/keyNums)-1)/1.5; //space between flats
 			for (i = 0; i<= sharp_flatNums+1; i++){
 				counter += 1; 
 				black_keys[i].position(black_key_pos, move_y+43)
@@ -123,7 +123,7 @@ function playNote(num){
 			}
 		}
 
-		steps = (octave_start * 13) - (octave_start) + extra; //calculating how many half steps for frequency equation 
+		steps = (octave_start * 12) + extra; //calculating how many half steps for frequency equation 
 
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
 		//print("white", new_frequency, num);
@@ -155,7 +155,7 @@ function playFlat(num){
 			}
 		}
 
-		steps = (octave_start * 13) - (octave_start) + extra; //calculating how many half steps for frequency equation 
+		steps = (octave_start * 12) + extra; //calculating how many half steps for frequency equation 
 
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
 		//print("flat", new_frequency);
