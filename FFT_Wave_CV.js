@@ -16,8 +16,8 @@ let dotSpacing = 35;    // Spacing between zoom indicator dots
 let topMargin = 10;
 let zoomButtonSize = 50;  // Zoom buttons default dimensions
 var dot = false;
-var dot_x = 0;
-var dot_y = 0;
+var dot_x = 0; // cursor position of the initial touch
+var dot_y = 0; //^^^
 var scrollSpectrum = false;
 var scrollStartX;
 var scrollStartY;
@@ -82,7 +82,7 @@ var wavedraw_mode = false; //check for if the ability to draw a waveform is avai
 var envelope_mode = false; //check for if the ability to draw an envelope is available
 var s = false;
 let slider_x_offset = 88;   // offset needed for slider position when rotating -90deg (to vertical)
-let synthGainFudgeFactor = 0.07;
+let synthGainFudgeFactor = 0.07; //minimizes fft spectrum to an amplitude that stays within the canvas 
 let slider_y_default = 400;
 var y_wave = [];
 var e_wave = [];
