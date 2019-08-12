@@ -36,9 +36,9 @@ var o_sketch = function(p) {
 		p.loop(); 
 
 		//    p.fft = new p5.FFT(0.8, 2048);
-
 		//    p.fft.setInput(mic);
 
+		//zoom in and out buttons for waveView 
 		p.o_zoom_in = createButton("+"); 
 		p.o_zoom_in.position(windowWidth - p.rightMargin,20); 
 		p.o_zoom_in.mousePressed(p.zoom_in);
@@ -57,6 +57,7 @@ var o_sketch = function(p) {
 		if (pause_wave == 0) {
 			p.strokeWeight(2);
 
+			//aesthetics for waveView
 			p.stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2]); 
 			p.background(curr_background[0],curr_background[1],curr_background[2]); 
 		
@@ -213,6 +214,7 @@ var o_sketch = function(p) {
 //		console.log(waveScale);
 	}
 
+	//touch functionality for waveView canvas
 	p.touchStarted = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -300 from "main" (spectrum) canvas

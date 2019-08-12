@@ -29,41 +29,44 @@ var textOffset = 0;
 let maxSpectrumFrames = 64;
 
 //Mic Vars
-var NumButtons = 5; 
+var NumButtons = 5; //the amount of sound recording micButtons 
 var top_zero = false; 
-var micOn = false;
+var micOn = false; 
 var buttons = [];
 var buttonState = [];
 var soundFile = [];
 var wave = [];
-var pause_fft = 0; 
-var pause_wave = 0; 
+var pause_fft = 0; //essentially a true or false detecting if the fft should be running or not
+var pause_wave = 0; //similar to pause_fft but for the waveform
 var curr_points = [12,3,3]; 
 var input_gain = 1.0;
 
 //Zoom variables 
 var scaling = 1;
 var move_position = 0; 
-var temp_x = 0; 
-var temp_y = 0; 
-var start_pos;
+// var temp_x = 0; 
+// var temp_y = 0; 
+// var start_pos;
 var waveScale = 3;      // Initial wave plot scaling factor (power of 2, i.e., 2^3 = 8x)
               // NOTE: higher scale factor is zooming "out", lower is zooming "in"
 //Button vars
-var header_x = 15;
-var slide_x = 15;  
-var descriptor_x = 160;
-var frequency_bool = false; 
-var sound_bool = false; 
-var colour_bool = false; 
-var synthesis_bool = false;
-var last_button;
-var colour_button_pos;
-let sidebarWidth = 200; 
-var recording_adjustment = 50; 
+var header_x = 15; //x position for headers
+var slide_x = 15;  //x position for sliders
+var descriptor_x = 160; // x position for description text
+var frequency_bool = false; //check variables for the buttons
+var sound_bool = false;  //^^^
+var colour_bool = false; //^^^
+var synthesis_bool = false;//^^^
+var last_button; //a variable to be used later to dictate specific sidebar components
+var colour_button_pos; //a variable to dictate where the colour menu components will draw
+let sidebarWidth = 200; //sidebar width
+var recording_adjustment = 50; //a variable that will change based upon if there is a sound recording or not
 
 //synthesis Vars
-var curr_recorded_sound, initial_x, initial_y, note, synthesis_slider_start, slider_pos; 
+var curr_recorded_sound; //will record whichever button has a sound recorded
+var note; //a triangle oscillator to play notes on the keyboard 
+var synthesis_slider_start; //takes the y value of when the header buttons stop
+var slider_pos; //variable that will help space out the sliders to their correct positions
 var sliderNums = 17;//starting from 1 not 0 
 //var sliderNums = 10;//starting from 1 not 0 
 var sliders = [];
@@ -72,13 +75,13 @@ var oscillators = [];
 var curr_f0 = 440; 
 var curr_output = 1; 
 var curr_wave = 'sine'; 
-var keyboard_bool = false;
-var waveform_bool = false;
-var wavedraw_mode = false; 
-var envelope_bool = false;
-var envelope_mode = false;
+var keyboard_bool = false; //check variables for if keyboard button is pressed
+var waveform_bool = false; //^^^
+var envelope_bool = false; //^^^
+var wavedraw_mode = false; //check for if the ability to draw a waveform is available
+var envelope_mode = false; //check for if the ability to draw an envelope is available
 var s = false;
-let slider_x_offset = 88; 	// offset needed for slider position when rotating -90deg (to vertical)
+let slider_x_offset = 88;   // offset needed for slider position when rotating -90deg (to vertical)
 let synthGainFudgeFactor = 0.07;
 let slider_y_default = 400;
 var y_wave = [];
@@ -87,26 +90,27 @@ var ye_wave = [];
 var ye_wave_idx = 0;
 let wavedraw_scale = 1;
 var synth_len = 44100; // One second, initially
-var preset1 = []; 
-var preset2 = []; 
+var preset1 = []; //will adjust sliders/oscillators when pressed and store values of sliders when bool is false
+var preset2 = []; //^^^
 var preset1_bool = false; 
 var preset2_bool = false; 
 var sliders_shown_bool = true; 
 
 //Colour Vars; 
-var curr_stroke = [255,119,0]; //rgb
-var curr_background = [255,255,255]; //rgb
+var curr_stroke = [255,119,0]; //rgb values that will adjust when sliders are changed
+var curr_background = [255,255,255]; //rgb ^^^
 var string_colors = "rgb(255,119,0)";
-var colour_default_bool = false; 
+var colour_default_bool = false; //for if the default colour button is pressed
 
 //Keyboard Vars; 
-var move_y = 30; 
-var moveable = false; 
-var keyNums = 16 //starting at A3
-var sharp_flatNums = 10 //starting at A3
-var white_key_pos = 230; 
-var black_key_pos = 265;
-var octave_start = 3; 
+var start_A = 27.5; //Hz for A0 and used for the calculation of frequencies for keyboard
+var move_y = 30; //the inital y position of the keyboard
+var moveable = false;  //boolean used to dictate if the user can move the keyboard or not
+var keyNums = 16 //the amount of white keys present on the keyboard
+var sharp_flatNums = 10 //the amount of black keys preset on the keyboard
+var white_key_pos = 230; //starting x position for white keys
+var black_key_pos = 265; // starting x position for black keys
+var octave_start = 3; //the keyboard will start at A3
 var curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; 
 var white_keys = []; 
 var black_keys = [];  
@@ -124,6 +128,7 @@ function setup() {
   cnv = createCanvas(windowWidth - sidebarWidth, 400); 
   cnv.position(sidebarWidth, 300); 
 
+  //zoom in and out buttons for fft 
   fft_b_zoom_in = createButton("+"); 
   fft_b_zoom_in.position(windowWidth - rightMargin, 300 + topMargin); 
   fft_b_zoom_in.size(zoomButtonSize, zoomButtonSize);
@@ -134,6 +139,7 @@ function setup() {
   fft_b_zoom_out.size(zoomButtonSize, zoomButtonSize);
   fft_b_zoom_out.mousePressed(fft_zoom_out); 
 
+  //setting the input of the fft to the microphone 
   mic = new p5.AudioIn(); 
   mic.start();
   micOn = true;
@@ -152,7 +158,7 @@ function setup() {
     spectra[s] = new Array(512).fill(0); 
   }
 
-  //oscillator creation
+  //oscillator creation at starting frequency (curr_f0) of 440
   for (i = 1; i<= sliderNums; i++) {
     oscillators[i] = new p5.Oscillator();
     oscillators[i].freq(440*i);
@@ -165,15 +171,15 @@ function setup() {
     preset2.push(0); 
   }
 
-	synth = new p5.SoundFile();
+  synth = new p5.SoundFile();
   e_wave = new Float32Array(synth_len).fill(1.0); 
   ye_wave = new Float32Array(synth_len).fill(0.0); 
 
   // Instantiate the envelope
-	envelope = new p5.Envelope();
+  envelope = new p5.Envelope();
 
-	// set attackTime, decayTime, sustainRatio, releaseTime
-	envelope.setADSR(0.001, 0.5, 0.1, 0.5);  	
+  // set attackTime, decayTime, sustainRatio, releaseTime
+  envelope.setADSR(0.001, 0.5, 0.1, 0.5);   
 }
 
 
@@ -220,7 +226,7 @@ function draw() {
 
 }
 
-
+//touch functionality for the global canvas 
 function touchStarted() {
   dot_x = mouseX;
   dot_y = mouseY;
@@ -261,7 +267,7 @@ function touchEnded() {
 
 
 function drawSpectra() {
-	// Draw current and recent (depending on wave zoom level) FFT frames
+  // Draw current and recent (depending on wave zoom level) FFT frames
 
     // Set parameters for drawing spectrum frames
     if (waveScale == 1) {
@@ -295,44 +301,44 @@ function drawSpectra() {
     
     // Loop to draw current and past spectrum frames
     for (s=0; s<numSpectrumFrames; s += s_inc) {
-		if (s==0) {
-			strokeWeight(2); 
-		} else {
-			strokeWeight(1);
-		}
+    if (s==0) {
+      strokeWeight(2); 
+    } else {
+      strokeWeight(1);
+    }
       
-		stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
+    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
 
-		tempShape = beginShape();
+    tempShape = beginShape();
 
-		// Compute the number of spectrum indexes for current fftScale factor
-		spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
+    // Compute the number of spectrum indexes for current fftScale factor
+    spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
 
-		for (i = 0; i < spectrumEdge ; i++) {
-			curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
-		}
-		endShape();
-	}
+    for (i = 0; i < spectrumEdge ; i++) {
+      curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+    }
+    endShape();
+  }
 }
 
 
 
 function drawFrequencyLabels() {
-	textAlign(CENTER);
-	fill(0);
-	strokeWeight(1);
-	stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2], 40); 
+  textAlign(CENTER);
+  fill(0);
+  strokeWeight(1);
+  stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2], 40); 
 
-//	if (scrollSpectrum) {
-	textOffset = -width * scrollOffset/512 * Math.pow(2,fftScale);
-		
-//		textOffset += scrollCurX - scrollStartX;
-//		textOffset = max( min(textOffset, 0), -width*(Math.pow(2,fftScale)-1) );
-//	}
+//  if (scrollSpectrum) {
+  textOffset = -width * scrollOffset/512 * Math.pow(2,fftScale);
+    
+//    textOffset += scrollCurX - scrollStartX;
+//    textOffset = max( min(textOffset, 0), -width*(Math.pow(2,fftScale)-1) );
+//  }
 
-	if (fftScale == 0) {
-		textOffset = 0;
-	}
+  if (fftScale == 0) {
+    textOffset = 0;
+  }
 
 
   if (fftScale == 3) {
@@ -349,7 +355,7 @@ function drawFrequencyLabels() {
   for (f=f_steps; f < f_max; f+= f_steps) {
     this_x = width * f / 11025 * Math.pow(2,fftScale) + textOffset;
     if ( (this_x >= 0) && (this_x < width) )  {
-    	line(this_x,0,this_x,350);
+      line(this_x,0,this_x,350);
       text(f, width * f / 11025 * Math.pow(2,fftScale) + textOffset, 350);
     }
   }
@@ -362,7 +368,7 @@ function fft_zoom_in() {
     }
 //    scrollOffset = 0;
 //    textOffset = 0;
-	repositionSliders(); 	// Re-position sliders
+  repositionSliders();  // Re-position sliders
     scrollOffset *= 2;
 //    textOffset *= 2;
 //    console.log(fftScale);  // For debugging
@@ -374,7 +380,7 @@ function fft_zoom_out() {
     }
 //    scrollOffset = 0;
 //    textOffset = 0;
-    repositionSliders(); 	// Re-position sliders
+    repositionSliders();  // Re-position sliders
     scrollOffset = round(scrollOffset/2);
 //    textOffset = round(textOffset/2);
 //    console.log(fftScale);  // For debugging
@@ -400,13 +406,15 @@ function zoom_buttons(){
 
 //Initializing the other javascript files/canvases
 var side_bar = new p5(side_bar); 
-var space = new p5(); 
-var o_p5 = new p5(o_sketch);
-var keyboard_p5 = new p5(keyboard_sketch); 
+var space = new p5(); //necessary in order to use windowWidth and windowHeight
+var o_p5 = new p5(o_sketch); //this is waveView 
+var keyboard_p5 = new p5(keyboard_sketch); //this is keyboardAccess
 
 ///////////////////////////////////////////////////////////////////////////////
 
 //Button functions
+//generally if the boolean is true, everything in the menu should show and if not eveything should be hidden 
+//each section has any functions related to that core function placed below it
 
 function sound_recorder() { 
   //Create a set of buttons to record/play sounds
@@ -448,7 +456,7 @@ function hide_micButtons(){
   }
 }
 
-//Dr. Kim's toggle button for Mic button 
+//toggle button for micButtons
 function toggleButton(idx) {
 
   return function() {
@@ -495,7 +503,6 @@ function toggleButton(idx) {
 
       fft.setInput(soundFile[idx]);
       soundFile[idx].pause(); // play the result!   
-    
     }
   }
 }
@@ -859,7 +866,6 @@ function updateWaveType(wave_type){
     }
   }
   recomputeWave(); 
-
 }
 
 //Oscillator Wave Settings 
@@ -910,8 +916,6 @@ function wave_drawing(){
     draw_wave_button.style('background-color', '#ffffff');
     startOscillators(); 
   }
-
-  
 }
 
 function envelope_drawing(){
@@ -932,9 +936,6 @@ function envelope_drawing(){
     draw_envelope_button.style('background-color', '#ffffff');
     startOscillators(); 
   }
-  
-  
-
 }
 
 function stopOscillators() {
@@ -949,6 +950,7 @@ function startOscillators() {
   }
 }
 
+//preset/manual options for if users want to save certain values for sliders
 function set_preset1(){
   preset1_bool = !preset1_bool; 
 
@@ -960,7 +962,6 @@ function set_preset1(){
     }
     recomputeWave(); 
   }
-
   else{
     preset1_button.style('background-color', '#ffffff');
   }
@@ -976,7 +977,6 @@ function set_preset2(){
     }
     recomputeWave(); 
   }
-
   else{
     preset2_button.style('background-color', '#ffffff');
   }
@@ -989,10 +989,12 @@ function updatePresets(preset_num){
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//Changing the colours of the background, sliders, and lines
 
 function colour_adjustment() { 
   colour_bool = !colour_bool;
 
+  //this locks out the colour adjusting menu 
   if (synthesis_bool == true || sound_bool == true){
     colour_bool =false; 
   }
@@ -1000,6 +1002,7 @@ function colour_adjustment() {
   if (colour_bool == true) {
     colour_button.style('background-color', '#4400ff');
 
+    colour_header.show(); 
     line_header.show(); 
     background_header.show(); 
     default_button.show(); 
@@ -1016,11 +1019,11 @@ function colour_adjustment() {
   else{
     colour_button.style('background-color', '#ffffff');
     hide_colours(); 
-
   }
 }
 
 function hide_colours(){
+  colour_header.hide() ;
   line_header.hide(); 
   background_header.hide(); 
   default_button.hide(); 
@@ -1056,6 +1059,7 @@ function updateColours(){
       colour_default_bool = false; 
   }
   
+  //saves the values of the sliders so that if colour adjuster isn't in view the colour will stay the same
   curr_stroke[0] = rline_slide.value();
   curr_stroke[1] = gline_slide.value();
   curr_stroke[2] = bline_slide.value();   
@@ -1080,6 +1084,7 @@ function access_keyboard(){
   if (keyboard_bool == true){
     keyboard_button.style('background-color', '#4400ff');
 
+    //essentially the area in which if touched, will allow for the user to move the keyboard
     move_box = createDiv(" "); 
     move_box.class("move_box_style"); 
     move_box.position(30, move_y); 
@@ -1122,10 +1127,11 @@ function clearKeys(){
 }
 
 function recreateKeys(){
-  var whiteWidth = (windowWidth-200)/keyNums;
-  var blackWidth = whiteWidth/2;
+  var whiteWidth = (windowWidth-200)/keyNums; //width of the white keys
+  var blackWidth = whiteWidth/2; //width of the black keys
+
+  //white keys
   for (i = 0; i<= keyNums; i++){ 
-      //white keys
       fill(230,230,230); 
       var label;
       if (i == 0){
@@ -1159,13 +1165,13 @@ function recreateKeys(){
 
 ///////////////////////////////////////////////////////////////////////////////
 
-//OLD CODE 
-//Frequency Adjuster option
+//OLD CODE
+//Frequency Adjuster option most of functionality code taken from (https://github.com/therewasaguy/p5-music-viz/tree/gh-pages/demos)
 // function frequency_sliders() { 
 //   frequency_bool = !frequency_bool;
 
 //   if (frequency_bool == true) {
-//     frequency_button.style('background-color', '#4400ff');
+//     frequency_button.style('background-co lor', '#4400ff');
 
 //     side_bar.redraw(); 
 //     //Frequency Sliders

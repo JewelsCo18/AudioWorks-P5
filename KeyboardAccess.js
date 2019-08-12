@@ -6,6 +6,7 @@ var keyboard_sketch = function(p){
 		cnv = p.createCanvas(0, 0);
 		cnv.position(200,0);
 
+		//triangle oscillator that will play "notes" of the keyboard
 		note = new p5.TriOsc(); 
 		note.start(); 
 		note.amp(0);
@@ -18,14 +19,15 @@ var keyboard_sketch = function(p){
 			p.clear(); 
 
 			move_box.position(230, move_y);
-
+			move_box.style("background-color", "#4400ff")
 			left_button.position((windowWidth/3.3), move_y+7); 
 			right_button.position((windowWidth/1.15), move_y+7);
 
+			//white keys
 			for (i = 0; i<= keyNums; i++){ 
-				//white keys
 				p.fill(230,230,230); 
 				var label;
+				//this will dictate when a label should be placed i.e. when it is a new octave
 				if (i == 0){
 					label = curr_octaves[0];
 				}
@@ -41,7 +43,7 @@ var keyboard_sketch = function(p){
 				white_keys[i].position(white_key_pos, move_y+43) 
 				white_key_pos += ((windowWidth-200)/keyNums)-4.5;
 			}
-			white_key_pos = 230; 
+			white_key_pos = 230; //have to redefine the x position of the white key for if the keyboard is redrawn 
 
 			var counter = 0; //checking for when to put larger or smaller space
 			var space = (((windowWidth - 200)/keyNums)-1)/1.5; //space between flats
@@ -60,7 +62,7 @@ var keyboard_sketch = function(p){
 					black_key_pos += space * 1.25; 
 				}
 			}
-			black_key_pos = 265; 
+			black_key_pos = 265; //have to redefine the x position of the black key for if the keyboard is redrawn 
 		}
 	}
 
@@ -71,7 +73,7 @@ var keyboard_sketch = function(p){
 			curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; 
 			p.clear();
 			clearKeys(); 
-			recreateKeys(); 
+			recreateKeys(); //will update the keys with the correct labels and note frequency
 		}
 	}
 
@@ -82,10 +84,11 @@ var keyboard_sketch = function(p){
 			curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; 
 			p.clear(); 
 			clearKeys(); 
-			recreateKeys(); 
+			recreateKeys(); //will update the keys with the correct labels and note frequency
 		}
 	}
 
+	//touch functionality for keyboard canvas
 	p.touchStarted = function(){
 		initial_x = p.mouseX; 
 		initial_y = p.mouseY;
@@ -106,11 +109,10 @@ var keyboard_sketch = function(p){
 	}			 
 }
 
-function playNote(num){
+function playNote(num){ //play white key
 
 	return function() {
 
-		start_A = 27.5 //Hz for A0
 		extra = num; 
 		for (i = 0; i< num; i++){
 			if (i == 1 || i == 4 || i == 8 || i == 11 || i == 15|| i == 18 || i == 21 ){ //no flats in between
@@ -129,20 +131,18 @@ function playNote(num){
 		//print("white", new_frequency, num);
 		note.freq(new_frequency); 
 		note.amp(output_slider.value());
-
-		note.fade(0.5,0.2); 
+		note.fade(0.5,0.2); //fade in the note
 
 		setTimeout(function() {
 		    note.fade(0,0.5);
-		},100);
+		},100);//fade out the note after 100 milliseconds
 	}
 }
 
-function playFlat(num){
+function playFlat(num){ //play black key 
 
 	return function() {
 
-		start_A = 27.5 //Hz for A0
 		extra = num; 
 		for (i = 0; i <= num; i++){
 			if (i == 1 || i == 3 || i == 6 || i == 8 || i == 11){ //two whites between
@@ -161,11 +161,11 @@ function playFlat(num){
 		//print("flat", new_frequency);
 		note.freq(new_frequency);
 		note.amp(output_slider.value());  
-		note.fade(0.5,0.2); 
+		note.fade(0.5,0.2); //fade in the note
 
 		setTimeout(function() {
 		    note.fade(0,0.5);
-		},100);
+		},100); //fade out the note after 100 milliseconds
 	}
 }
 

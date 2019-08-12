@@ -1,7 +1,7 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  position: fixed;
+html, body{
+	margin: 0;
+	padding: 0;
+	position: fixed;
 }
 
 body.noScroll {
@@ -14,6 +14,7 @@ body.noScroll {
 
 canvas {
   display: block;
+  vertical-align: center;
 }
 
 .subheader_style {
@@ -223,20 +224,3 @@ input[type=range]:focus::-ms-fill-lower {
 input[type=range]:focus::-ms-fill-upper {
   background: black;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

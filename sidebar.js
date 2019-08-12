@@ -13,6 +13,30 @@ var side_bar = function(p) {
     micButton.mousePressed(restartMic);
     micButton.position(header_x, 50); 
 
+    sound_button = createDiv("Sound Recorder"); 
+    sound_button.class('subheader_style'); 
+    sound_button.mousePressed(sound_recorder); 
+    sound_button.position(header_x, 150); 
+
+    // frequency_button = createDiv("Frequency Adjuster"); 
+    // frequency_button.class('subheader_style'); 
+    // frequency_button.mousePressed(frequency_sliders); 
+    // frequency_button.position(10, 130); 
+
+    synthesis_button = createDiv("Synthesizer"); 
+    synthesis_button.class('subheader_style'); 
+    synthesis_button.mousePressed(synthesizer); 
+    synthesis_button.position(header_x, 190);
+
+    last_button = synthesis_button.y + synthesis_button.height; //y position where the synthesis button ends (for menu positioning)
+
+    colour_button = createDiv("Colour Adjuster"); 
+    colour_button.class('subheader_style'); 
+    colour_button.mousePressed(colour_adjustment); 
+    colour_button.position(header_x, windowHeight-40); 
+    colour_button_pos = windowHeight-10-colour_button.height - 30;
+
+    //Microphone Input's sliders, input box, and header (in between mic button and sound button) 
     input_header = createDiv('Input:'); 
     input_header.class('subheader_text_style'); 
     input_header.position(header_x-80, 95); 
@@ -29,31 +53,7 @@ var side_bar = function(p) {
     mic_input_slider.style('background-color', string_colors);
     mic_input_slider.input(update_input_gain); 
 
-    sound_button = createDiv("Sound Recorder"); 
-    sound_button.class('subheader_style'); 
-    sound_button.mousePressed(sound_recorder); 
-    sound_button.position(header_x, 150); 
-
-    // frequency_button = createDiv("Frequency Adjuster"); 
-    // frequency_button.class('subheader_style'); 
-    // frequency_button.mousePressed(frequency_sliders); 
-    // frequency_button.position(10, 130); 
-
-    synthesis_button = createDiv("Synthesizer"); 
-    synthesis_button.class('subheader_style'); 
-    synthesis_button.mousePressed(synthesizer); 
-    synthesis_button.position(header_x, 190);
-
-    last_button = synthesis_button.y + synthesis_button.height; 
-
-    colour_button = createDiv("Colour Adjuster"); 
-    colour_button.class('subheader_style'); 
-    colour_button.mousePressed(colour_adjustment); 
-    colour_button.position(header_x, windowHeight-40); 
-    colour_button_pos = windowHeight-10-colour_button.height - 30;
-
     //MIC SECTION 
-
     mic_header = createDiv('Record and play back sound'); 
     mic_header.class('subheader_text_style'); 
     mic_header.position(header_x-10, last_button+ 30); 
@@ -70,10 +70,9 @@ var side_bar = function(p) {
       soundFile[i] = new p5.SoundFile();     
     }
 
-    hide_micButtons();
+    hide_micButtons(); //hiding everything because this is a menu and not on the main sidebar
 
     //SYNTHESIS SECTION 
-
     synthesis_header = createDiv('Synthesize your own sound'); 
     synthesis_header.class('subheader_text_style'); 
     synthesis_header.position(header_x-10, last_button + 27);
@@ -139,8 +138,10 @@ var side_bar = function(p) {
     hide_synthesis() //to ensure that everything is hidden initially 
 
     //COLOUR SECTION 
+    colour_header = createDiv("Change line/background color"); 
+    colour_header.class('subheader_text_style'); 
+    colour_header.position(header_x-12, colour_button_pos - 240); 
 
-    //p.text("Change line/background color", header_x, colour_button_pos - 210); 
     line_header = createDiv('Line Color'); 
     line_header.class('subheader_text_style'); 
     line_header.position(header_x-70, colour_button_pos - 210); 
@@ -213,6 +214,7 @@ var side_bar = function(p) {
     
   }
 
+  //touch functionality for sidebar function 
   p.touchMoved = function(){
     updateColours(); 
 
