@@ -13,11 +13,6 @@ var side_bar = function(p) {
     micButton.mousePressed(restartMic);
     micButton.position(header_x, 50); 
 
-    sound_button = createDiv("Sound Recorder"); 
-    sound_button.class('subheader_style'); 
-    sound_button.mousePressed(sound_recorder); 
-    sound_button.position(header_x, 150); 
-
     // frequency_button = createDiv("Frequency Adjuster"); 
     // frequency_button.class('subheader_style'); 
     // frequency_button.mousePressed(frequency_sliders); 
@@ -200,6 +195,11 @@ var side_bar = function(p) {
     //Headers
     p.textSize(33); 
     p.text('AudioWorks', header_x,35);
+
+    sound_button = createDiv("Sound Recorder"); //sound menu button put here bc of odd selection issue where only right side can be pressed
+    sound_button.class('subheader_style'); 
+    sound_button.mousePressed(sound_recorder); 
+    sound_button.position(header_x, 150); 
 
     // if (frequency_bool == true){
     //   //Frequency Blurb

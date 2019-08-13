@@ -1,7 +1,8 @@
 //IPAD SCREEN SIZE 
 //createCanvas(980, 800); 
 
-var mic, fft, cnv, input, points, synth, envelope;
+var mic, fft, cnv, input, synth, envelope, global_cnv; 
+// var points for old fft
 
 //FFT Spectrum Vars
 var divisions = 5;
@@ -111,7 +112,7 @@ var sharp_flatNums = 10 //the amount of black keys preset on the keyboard
 var white_key_pos = 230; //starting x position for white keys
 var black_key_pos = 265; // starting x position for black keys
 var octave_start = 3; //the keyboard will start at A3
-var curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; 
+var curr_octaves = ['A' + octave_start, 'A' + (octave_start+1), 'A' + (octave_start+2)]; //current octaves in keyboard (also used for labels)
 var white_keys = []; 
 var black_keys = [];  
 
@@ -120,13 +121,10 @@ function setup() {
   //for Safari use of microphone
   userStartAudio();
 
-  //scroll - Doesn't work
-//  window.scrollTo(0,100); 
-//  window.scrollBy(0,20); 
-
 //  cnv = createCanvas(windowWidth/1.2, windowHeight/2);
   cnv = createCanvas(windowWidth - sidebarWidth, 400); 
-  cnv.position(sidebarWidth, 300); 
+  cnv.position(sidebarWidth, 300);
+  global_cnv = windowHeight; 
 
   //zoom in and out buttons for fft 
   fft_b_zoom_in = createButton("+"); 
@@ -322,7 +320,6 @@ function drawSpectra() {
 }
 
 
-
 function drawFrequencyLabels() {
   textAlign(CENTER);
   fill(0);
@@ -339,7 +336,6 @@ function drawFrequencyLabels() {
   if (fftScale == 0) {
     textOffset = 0;
   }
-
 
   if (fftScale == 3) {
     f_steps = 250;
@@ -429,7 +425,6 @@ function sound_recorder() {
       sliders[i].hide(); 
       oscillators[i].stop(); 
     }
-
   }
 
   if (sound_bool == true) {
@@ -442,7 +437,6 @@ function sound_recorder() {
       curr_recorded_sound = null; //new set of sounds nothing recorded yet 
     }
   }
-
   else{
     sound_button.style('background-color', '#ffffff');
     hide_micButtons(); 
@@ -1119,9 +1113,6 @@ function access_keyboard(){
 function clearKeys(){
   for (i =0; i<= keyNums; i++){
     white_keys[i].hide(); 
-  }
-
-  for (i=0; i<= sharp_flatNums +1; i++){
     black_keys[i].hide(); 
   }
 }
@@ -1150,17 +1141,41 @@ function recreateKeys(){
       white_keys[i].class("piano_white_key_style")
       white_keys[i].style('width', whiteWidth + "px"); 
       white_keys[i].mousePressed(playNote(i)); 
-    }
 
-  //black keys 
-  fill(0,0,0); 
-  for (i = 0; i<= sharp_flatNums+1; i++){
-    black_keys[i] = createDiv(" "); 
-    black_keys[i].class("piano_black_key_style")
-    black_keys[i].style('width', blackWidth + "px");
-    black_keys[i].mousePressed(playFlat(i));
-  } 
+      //black keys
+      fill(0,0,0); 
+      black_keys[i] = createDiv(" "); 
+      black_keys[i].class("piano_black_key_style")
+      black_keys[i].style('width', blackWidth + "px");
+      black_keys[i].mousePressed(playFlat(i));
+    }
   
+}
+///////////////////////////////////////////////////////////////////////////////
+
+function windowResized() {
+  if (keyboard_bool == true){
+      clearKeys(); 
+      recreateKeys(); 
+  }
+
+  if (synthesis_bool == true){
+    repositionSliders(); 
+  }
+
+  resizeCanvas(windowWidth - sidebarWidth, 400); 
+  cnv.position(sidebarWidth, 300); 
+  fft_b_zoom_in.position(windowWidth - rightMargin, 300 + topMargin); 
+  fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 300+topMargin); 
+
+  o_p5.resizeCanvas(windowWidth - 200, 300); 
+  //o_p5.position(200,0); 
+  o_p5.o_zoom_in.position(windowWidth - o_p5.rightMargin,20); 
+  o_p5.o_zoom_out.position(windowWidth - o_p5.rightMargin - (o_p5.maxScale*o_p5.buttonSpacing) - (zoomButtonSize+o_p5.buttonSpacing),20); 
+
+  // if (cnv.y == global_cnv){ //enable scrolling when the height is adjusted 
+  //   select('body').attribute('position', 'static'); 
+  // }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

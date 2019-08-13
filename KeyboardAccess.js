@@ -40,29 +40,18 @@ var keyboard_sketch = function(p){
 				else{
 					label = " "; 
 				}
-				white_keys[i].position(white_key_pos, move_y+43) 
-				white_key_pos += ((windowWidth-200)/keyNums)-4.5;
-			}
-			white_key_pos = 230; //have to redefine the x position of the white key for if the keyboard is redrawn 
 
-			var counter = 0; //checking for when to put larger or smaller space
-			var space = (((windowWidth - 200)/keyNums)-1)/1.5; //space between flats
-			for (i = 0; i<= sharp_flatNums+1; i++){
-				counter += 1; 
-				black_keys[i].position(black_key_pos, move_y+43)
-
-				if (counter == 1 || counter == 3) {
-					black_key_pos += space * 3;
-				}
-				else if (counter == 5){
-					counter = 0; 
-					black_key_pos += space * 1.25; 
+				if (i == 0 || i == 2 || i == 5 || i == 9 || i == 12 || i == 16){
 				}
 				else{
-					black_key_pos += space * 1.25; 
+					black_keys[i].position(white_key_pos - 20 , move_y+43)
 				}
+				
+				white_keys[i].position(white_key_pos, move_y+43) 
+				white_key_pos += ((windowWidth-200)/keyNums)-4.5;
+
 			}
-			black_key_pos = 265; //have to redefine the x position of the black key for if the keyboard is redrawn 
+			white_key_pos = 230; //have to redefine the x position of the white key for if the keyboard is redrawn 
 		}
 	}
 
@@ -143,14 +132,12 @@ function playFlat(num){ //play black key
 
 	return function() {
 
-		extra = num; 
+		extra = -2; 
 		for (i = 0; i <= num; i++){
-			if (i == 1 || i == 3 || i == 6 || i == 8 || i == 11){ //two whites between
-				//print("+2"); 
+			if ( i % 2 == 0 || i == 7 || i== 11|| i == 14 || i == 15){ //two whites between 
 				extra += 2; 
 			}
-			else{ //one white in between
-				//print("+1");
+			else{
 				extra += 1; 
 			}
 		}
@@ -158,7 +145,7 @@ function playFlat(num){ //play black key
 		steps = (octave_start * 12) + extra; //calculating how many half steps for frequency equation 
 
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
-		//print("flat", new_frequency);
+		print("flat", new_frequency, 'N'+num, 'E'+extra);
 		note.freq(new_frequency);
 		note.amp(output_slider.value());  
 		note.fade(0.5,0.2); //fade in the note

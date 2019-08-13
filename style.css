@@ -8,10 +8,6 @@ body.noScroll {
   overflow: hidden;
 }
 
-body.noScroll {
-  overflow: hidden;
-}
-
 canvas {
   display: block;
   vertical-align: center;
