@@ -89,7 +89,8 @@ var y_wave = [];
 var e_wave = [];
 var ye_wave = [];
 var ye_wave_idx = 0;
-let wavedraw_scale = 1;
+var wavedraw_scale = 1;
+var return_waveScale; 
 var synth_len = 44100; // One second, initially
 var preset1 = []; //will adjust sliders/oscillators when pressed and store values of sliders when bool is false
 var preset2 = []; //^^^
@@ -265,14 +266,14 @@ function touchEnded() {
 
 
 function drawSpectra() {
-  // Draw current and recent (depending on wave zoom level) FFT frames
-
+    // Draw current and recent (depending on wave zoom level) FFT frames
     // Set parameters for drawing spectrum frames
     if (waveScale == 1) {
       // Special case for scale = 1 (since 2^1=2), but just show one spectrum frame
       numSpectrumFrames = 1;
     } else {
       numSpectrumFrames = Math.pow(2,waveScale);
+      return_waveScale = waveScale; 
     }   
     
     // Change loop increment based on scale
@@ -293,27 +294,26 @@ function drawSpectra() {
 //      console.log(scrollOffset);
     }
     
-    if (fftScale == 0) {
-      scrollOffset = 0;
-    }
-    
+  if (fftScale == 0) {
+    scrollOffset = 0;
+  }
     // Loop to draw current and past spectrum frames
     for (s=0; s<numSpectrumFrames; s += s_inc) {
-    if (s==0) {
-      strokeWeight(2); 
-    } else {
-      strokeWeight(1);
-    }
-      
-    stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
+      if (s==0) {
+        strokeWeight(2); 
+      } else {
+        strokeWeight(1);
+      }
+        
+      stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2],255 - s*(256/numSpectrumFrames)); 
 
-    tempShape = beginShape();
+      tempShape = beginShape();
 
-    // Compute the number of spectrum indexes for current fftScale factor
-    spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
+      // Compute the number of spectrum indexes for current fftScale factor
+      spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
 
-    for (i = 0; i < spectrumEdge ; i++) {
-      curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+      for (i = 0; i < spectrumEdge ; i++) {
+        curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
     }
     endShape();
   }
@@ -364,7 +364,9 @@ function fft_zoom_in() {
     }
 //    scrollOffset = 0;
 //    textOffset = 0;
-  repositionSliders();  // Re-position sliders
+    if (synthesis_bool == true){
+      repositionSliders();  // Re-position sliders
+    }
     scrollOffset *= 2;
 //    textOffset *= 2;
 //    console.log(fftScale);  // For debugging
@@ -376,7 +378,9 @@ function fft_zoom_out() {
     }
 //    scrollOffset = 0;
 //    textOffset = 0;
-    repositionSliders();  // Re-position sliders
+    if (synthesis_bool == true){
+      repositionSliders();  // Re-position sliders
+    }
     scrollOffset = round(scrollOffset/2);
 //    textOffset = round(textOffset/2);
 //    console.log(fftScale);  // For debugging
@@ -578,6 +582,8 @@ function synthesizer() {
   // Activate and show synthesizer
   if (synthesis_bool == true) {
     mic.amp(0); // Turn off mic
+    stopMic();
+    fft.setInput(); 
      
     synthesis_button.style('background-color', '#4400ff');
 
@@ -619,9 +625,6 @@ function synthesizer() {
     output_slider.show(); 
     output_slider_input.show(); 
 
-    stopMic();
-    fft.setInput(); 
-
     if (wavedraw_mode) {
       synth.play(); 
     } 
@@ -632,6 +635,7 @@ function synthesizer() {
 
     restartMic();
     fft.setInput(mic); 
+    waveScale = return_waveScale; 
     hide_synthesis();
 
     for (i = 1; i < sliderNums+1; i++) { 
