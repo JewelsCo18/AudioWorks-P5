@@ -1,6 +1,6 @@
 # AudioWorks-P5
 
-Developing version of Audioworks using the P5 libary 
+Developing version of AudioWorks using the P5 libary 
 
 Link to live version: https://drexeltranscend.org/projects/AudioWorks-P5/
 
