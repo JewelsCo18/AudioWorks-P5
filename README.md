@@ -2,8 +2,10 @@
 
 Developing version of Audioworks using the P5 libary 
 
+Link to live version: https://drexeltranscend.org/projects/AudioWorks-P5/
+
 # Update Notes:
-- Compatible with Chrome and Safari
+- Compatible with Chrome, Safari, Firefox, and Microsoft Edge
 - Capable of:
   - recording sound
   - synthesizing sound 
