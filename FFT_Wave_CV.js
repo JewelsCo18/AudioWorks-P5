@@ -90,7 +90,7 @@ var e_wave = [];
 var ye_wave = [];
 var ye_wave_idx = 0;
 var wavedraw_scale = 1;
-var return_waveScale; 
+var return_waveScale; //to keep track of the waveScale to continue having previous spectra drawn 
 var synth_len = 44100; // One second, initially
 var preset1 = []; //will adjust sliders/oscillators when pressed and store values of sliders when bool is false
 var preset2 = []; //^^^
@@ -199,13 +199,15 @@ function draw() {
   // Update current spectrum array, since we're about to draw it
   var spectrum = fft.analyze();
 //  var newBuffer = [];   // unused
-
-  // Insert just computed spectrum at the head (index 0) of the spectra array
-  spectra.unshift(spectrum.slice(0,512));
-  spectra.pop(); // Remove oldest (highest index) spectrum from the spectra array
+  
+  if (pause_fft == 0){ //will control drawing for pause function 
+    // Insert just computed spectrum at the head (index 0) of the spectra array
+    spectra.unshift(spectrum.slice(0,512));
+    spectra.pop(); // Remove oldest (highest index) spectrum from the spectra array
+  }
 
   drawSpectra();
-  
+
   drawFrequencyLabels();
   zoom_buttons(); 
 
@@ -273,7 +275,7 @@ function drawSpectra() {
       numSpectrumFrames = 1;
     } else {
       numSpectrumFrames = Math.pow(2,waveScale);
-      return_waveScale = waveScale; 
+      return_waveScale = waveScale; //to keep track of waveScale value
     }   
     
     // Change loop increment based on scale
@@ -486,6 +488,7 @@ function toggleButton(idx) {
       buttonState[idx] = 3;
 
       curr_recorded_sound = idx; 
+      pause_fft = 0; //ensure that the drawing is maintained
 
       fft.setInput(soundFile[idx]);
       soundFile[idx].onended( donePlaying(idx) );    
@@ -500,6 +503,8 @@ function toggleButton(idx) {
       buttonState[idx] = 2;
 
       fft.setInput(soundFile[idx]);
+      pause_fft = 1; 
+      waveScale = return_waveScale; //change waveScale variable back to what it was
       soundFile[idx].pause(); // play the result!   
     }
   }
@@ -635,7 +640,6 @@ function synthesizer() {
 
     restartMic();
     fft.setInput(mic); 
-    waveScale = return_waveScale; 
     hide_synthesis();
 
     for (i = 1; i < sliderNums+1; i++) { 
@@ -1168,7 +1172,7 @@ function windowResized() {
   }
 
   resizeCanvas(windowWidth - sidebarWidth, 400); 
-  cnv.position(sidebarWidth, 300); 
+  //cnv.position(sidebarWidth, 300); 
   fft_b_zoom_in.position(windowWidth - rightMargin, 300 + topMargin); 
   fft_b_zoom_out.position(windowWidth - rightMargin - (dotSpacing*fftMaxScale) - (zoomButtonSize+dotSpacing), 300+topMargin); 
 
@@ -1177,9 +1181,6 @@ function windowResized() {
   o_p5.o_zoom_in.position(windowWidth - o_p5.rightMargin,20); 
   o_p5.o_zoom_out.position(windowWidth - o_p5.rightMargin - (o_p5.maxScale*o_p5.buttonSpacing) - (zoomButtonSize+o_p5.buttonSpacing),20); 
 
-  // if (cnv.y == global_cnv){ //enable scrolling when the height is adjusted 
-  //   select('body').attribute('position', 'static'); 
-  // }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
