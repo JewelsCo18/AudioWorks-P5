@@ -640,6 +640,7 @@ function synthesizer() {
 
     restartMic();
     fft.setInput(mic); 
+    waveScale = return_waveScale; 
     hide_synthesis();
 
     for (i = 1; i < sliderNums+1; i++) { 
