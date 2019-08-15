@@ -13,7 +13,7 @@ Link to live version: https://drexeltranscend.org/projects/AudioWorks-P5/
   - colour changing 
 
 # Current Issues/Goals: 
-- waveform and envelope line is off when drawing
+- waveform line is off when drawing
 - in waveform/envelope mode, envelope sound keeps playing not waveform 
 - sliders and waveform are slow
 - updating and repositioning sliders are slow
