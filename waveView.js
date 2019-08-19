@@ -127,7 +127,7 @@ var o_sketch = function(p) {
 				p.beginShape();
 
 				start_idx = (p.fftBins * Math.pow(2,p.maxScale)) - (p.fftBins * Math.pow(2,waveScale) );
-				console.log(start_idx);
+				//console.log(start_idx);
 			
 				// Here, we increment each loop by 2 to keep the amount of computation about the same
 				for (start_pos = 0; start_pos < p.fftBins; start_pos +=2 ) {
@@ -248,8 +248,8 @@ var o_sketch = function(p) {
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
 		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas
-		print('x: ' + p.dot_x);
-		print('y: ' + p.dot_y);	
+		//print('x: ' + p.dot_x);
+		//print('y: ' + p.dot_y);	
 		if (wavedraw_mode){
 			// Check if touch points are "in canvas"
 			if ( (start_point.length > 0) && (start_point[0] > 0) && (start_point[1] < 300) ) {

@@ -117,7 +117,7 @@ function playNote(num){ //play white key
 		steps = (octave_start * 12) + extra; //calculating how many half steps for frequency equation 
 
 		new_frequency = start_A * pow(2, steps/12) //frequency equation
-		//print("white", new_frequency, num);
+		print("white", new_frequency, num);
 		note.freq(new_frequency); 
 		note.amp(output_slider.value());
 		note.fade(0.5,0.2); //fade in the note
@@ -134,7 +134,7 @@ function playFlat(num){ //play black key
 
 		extra = -2; 
 		for (i = 0; i <= num; i++){
-			if ( i % 2 == 0 || i == 7 || i== 11|| i == 14 || i == 15){ //two whites between 
+			if ( i % 2 == 0 || i == 7 || i== 11|| i == 14 || i == 15){ 
 				extra += 2; 
 			}
 			else{

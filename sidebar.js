@@ -28,13 +28,19 @@ var side_bar = function(p) {
     synthesis_button.mousePressed(synthesizer); 
     synthesis_button.position(header_x, 190);
 
-    last_button = synthesis_button.y + synthesis_button.height; //y position where the synthesis button ends (for menu positioning)
+    last_button = synthesis_button.y +synthesis_button.height/2;  //y position where the synthesis button ends (for menu positioning)
 
     colour_button = createDiv("Colour Adjuster"); 
     colour_button.class('subheader_style'); 
     colour_button.mousePressed(colour_adjustment); 
-    colour_button.position(header_x, windowHeight-40); 
-    colour_button_pos = windowHeight-10-colour_button.height - 30;
+    colour_button.position(header_x, windowHeight-80); 
+
+    colour_button_pos = windowHeight-10-colour_button.height - 70;
+
+    example_button = createDiv("More Examples"); 
+    example_button.class('subheader_style'); 
+    example_button.mousePressed(example_options); 
+    example_button.position(header_x, windowHeight-40); 
 
     //Microphone Input's sliders, input box, and header (in between mic button and sound button) 
     input_header = createDiv('Input:'); 
@@ -196,8 +202,6 @@ var side_bar = function(p) {
     p.textFont('Helvetica');
 //    p.background(0,0,0); 
 
-    var last_button = synthesis_button.y +synthesis_button.height/2; 
-
     //Headers
     p.textSize(33); 
     p.text('AudioWorks', header_x,35);
@@ -219,11 +223,15 @@ var side_bar = function(p) {
   p.touchMoved = function(){
     updateColours(); 
 
-    if (preset1_bool == true){
-      updatePresets(preset1);
+    if( preset1_bool == false && empty_preset1 == 0 || preset1_bool == true ){
+        for (i=1; i<sliderNums+1; i++) {
+          preset1[i] = sliders[i].value(); 
+        }
     }
-    else if (preset2_bool == true){
-      updatePresets(preset2); 
+    if (preset2_bool == false && empty_preset2 == 0 || preset2_bool == true ){ 
+        for (i=1; i<sliderNums+1; i++) {
+          preset2[i] = sliders[i].value(); 
+        }
     }
   }
 }
