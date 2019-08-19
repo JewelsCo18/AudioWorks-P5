@@ -54,7 +54,7 @@ var o_sketch = function(p) {
 	}
 
 	p.draw = function() {
-		if (pause_wave == 0) {
+//		if (pause_wave == 0) {
 			p.strokeWeight(2);
 
 			//aesthetics for waveView
@@ -62,55 +62,63 @@ var o_sketch = function(p) {
 			p.background(curr_background[0],curr_background[1],curr_background[2]); 
 		
 			if (synthesis_bool) {
-				waveScale = 1;	// Force max zoom for synth mode
-				
+
 				//p.scaleFactor = 0.5 / synthGainFudgeFactor;
 				if (wavedraw_mode) {
 					p.scaleFactor = wavedraw_scale;
 				} else {
 					p.scaleFactor = 1;
 				}
-				
-/*				if (ye_wave_idx + 1024 <= synth_len) {
-					ye_slice = ye_wave.slice( ye_wave_idx, ye_wave_idx+1024 );
-				}
-				else {				
-					ye_slice = ye_wave.slice( ye_wave_idx, synth_len );
-					p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
-					ye_slice = ye_wave.slice( 0, 1024 - (synth_len-ye_wave_idx) );
-				} */
 
-//				p.wave = p.wave.concat( Array.prototype.slice.call( ye_slice ) );
-				p.wave = p.wave.concat( Array.prototype.slice.call( ye_wave.slice(0,2048) ) );
-
-//				ye_wave_idx += 1024;
-//				ye_wave_idx %= synth_len;
+				if (envelope_mode == false) {
+					waveScale = 1;	// Force max zoom for synth mode, unless in envelope mode
 				
+				// Add wave with envelope (ye_wave) to the end of p.wave array and remove oldest p.wave samples				
+//				p.wave = p.wave.concat( Array.prototype.slice.call( ye_wave.slice(0,2048) ) ); // old call
+				p.wave = p.wave.concat( Array.from( ye_wave.slice(0,2048) ) );
 				p.wave.splice(0,2048);
-
-			} else {
-				p.scaleFactor = 1;
-				p.wave = p.wave.concat(fft.waveform());
+				}
+				else {
+					p.wave = p.wave.concat(fft.waveform());
 					// There's no guarantee that successive frames are contiguous (possible dropouts)
 					// Probably want to fix this, at least for synthesis
-				p.wave.splice(0,1024);
+					p.wave.splice(0,1024);				
+				}
 			}
-				
+			else {
+				p.scaleFactor = 1;
+
+				if (pause_wave == 0) {
+					p.wave = p.wave.concat(fft.waveform());
+					// There's no guarantee that successive frames are contiguous (possible dropouts)
+					// Probably want to fix this, at least for synthesis
+					p.wave.splice(0,1024);
+				}
+			}
 
 			if (waveScale < 4) {
 				// At lower zoom levels (zoom in), just plot the wave
 				p.noFill();
 				p.beginShape();
 
+//				if (synthesis_bool == false) {
 				// Compute the start index of the wave array we want to plot,
-				// given the scaling factor
+				// given the wave scaling (zoom) factor
 				start_idx = (p.fftBins * Math.pow(2,p.maxScale)) - (p.fftBins * Math.pow(2,waveScale) );
 //				console.log(start_idx);		// For debugging
+//				}
 			
 				for (start_pos = 0; start_pos < p.fftBins; start_pos++) {
 					vertex(start_pos + move_position, map(p.scaleFactor * p.wave[start_idx + start_pos * Math.pow(2,waveScale) ], -1, 1, 300, 100));
 				}
 				p.endShape();
+				
+				p.stroke(0);
+				p.strokeWeight(0.5);
+				p.line(move_position,200, width, 200);
+				
+				p.stroke(curr_stroke[0],curr_stroke[1],curr_stroke[2]); 
+				p.strokeWeight(2);
 			}
 			else {
 				// At higher zoom levels (zoom out), plot the wave envelope (with fill)
@@ -161,7 +169,8 @@ var o_sketch = function(p) {
 				if (waveform_bool) {
 					p.beginShape();
 					for (i = 0; i < p.drawWave.length; i++ ) {
-						curveVertex(p.drawWave[i][0], p.drawWave[i][1]);
+						vertex(p.drawWave[i][0], p.drawWave[i][1]);
+//						curveVertex(p.drawWave[i][0], p.drawWave[i][1]);
 					}
 					p.endShape();
 				}
@@ -196,7 +205,7 @@ var o_sketch = function(p) {
 			}
 				
 //			}
-		} 
+//		} 
     }  
 
 	// Zoom in/out button functions
@@ -238,7 +247,9 @@ var o_sketch = function(p) {
 	
 	p.touchMoved = function() {
 		p.dot_x = mouseX;
-		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas		
+		p.dot_y = mouseY + 300; // Because this canvas is offset -368 from "main" (spectrum) canvas
+		print('x: ' + p.dot_x);
+		print('y: ' + p.dot_y);	
 		if (wavedraw_mode){
 			// Check if touch points are "in canvas"
 			if ( (start_point.length > 0) && (start_point[0] > 0) && (start_point[1] < 300) ) {
@@ -248,6 +259,7 @@ var o_sketch = function(p) {
 				start_point = [];
 			}
 			p.drawWave.push([p.dot_x,p.dot_y]);
+			return false;
 		}
 		if (envelope_mode){
 			// Check if touch points are "in canvas"
@@ -258,7 +270,8 @@ var o_sketch = function(p) {
 				start_point = [];
 			}
 			p.drawEnvelope.push([p.dot_x,p.dot_y]);
-		}
+			return false;
+		}		
 	}
 
 	p.touchEnded = function() {
@@ -271,7 +284,9 @@ var o_sketch = function(p) {
 		}
 		else if ( (wavedraw_mode) || (envelope_mode) ) {
 //			envelope.play(synth,0);
-			synth.play();
+			if ( (mouseX > 200) && (mouseY+300 > 100) && (mouseY+300 < 300) ) {
+				synth.play();
+			}
 		}
 		p.dot = false;
 	}
@@ -337,7 +352,8 @@ var o_sketch = function(p) {
 	
 
 	p.updateEnvelope = function() {
-		
+		synth_len = 44100; // One second		
+
 		e_wave = new Float32Array(synth_len).fill(0.0);
 	
 		idx = 0;
@@ -362,12 +378,14 @@ var o_sketch = function(p) {
 //		}
 
 		envelope_bool = false;
+		waveScale = 4;
 	}	
 
 
 	p.updateSynth = function() {
 		ye_wave = [];
-		ye_wave = new Float32Array(synth_len);
+//		ye_wave = new Float32Array(synth_len);
+		ye_wave = new Float32Array(44100); // One second
 
 		if (y_wave.length != synth_len) {
 			y_wave = [];
@@ -377,7 +395,8 @@ var o_sketch = function(p) {
 //				y_wave[i] = 0;
 				for (s=1; s<=sliderNums; s++) {
 					x = i/44100;
-					y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+//					y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+					y_wave[i] += slider_amps[s] * sin(TWO_PI * (round_f0 * s) * x);	
 				}
 		
 				ye_wave[i] = y_wave[i] * e_wave[i];

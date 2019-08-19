@@ -71,7 +71,7 @@ var slider_pos; //variable that will help space out the sliders to their correct
 var sliderNums = 17;//starting from 1 not 0 
 //var sliderNums = 10;//starting from 1 not 0 
 var sliders = [];
-var slider_vals = [];  
+var slider_amps = [];  
 var oscillators = [];
 var curr_f0 = 440; 
 var curr_output = 1; 
@@ -82,9 +82,11 @@ var envelope_bool = false; //^^^
 var wavedraw_mode = false; //check for if the ability to draw a waveform is available
 var envelope_mode = false; //check for if the ability to draw an envelope is available
 var s = false;
-let slider_x_offset = 88;   // offset needed for slider position when rotating -90deg (to vertical)
-let synthGainFudgeFactor = 0.07; //minimizes fft spectrum to an amplitude that stays within the canvas 
-let slider_y_default = 400;
+//let slider_x_offset = 88;   // offset needed for slider position when rotating -90deg (to vertical)
+let slider_x_offset = 112;   // offset needed for slider position when rotating -90deg (to vertical)
+let synthGainFudgeFactor = 1.0; //minimizes fft spectrum to an amplitude that stays within the canvas 
+//let slider_y_default = 420;
+let slider_y_default = 410;
 var y_wave = [];
 var e_wave = [];
 var ye_wave = [];
@@ -97,6 +99,7 @@ var preset2 = []; //^^^
 var preset1_bool = false; 
 var preset2_bool = false; 
 var sliders_shown_bool = true; 
+let minSliderRange = -60;
 
 //Colour Vars; 
 var curr_stroke = [255,119,0]; //rgb values that will adjust when sliders are changed
@@ -178,7 +181,27 @@ function setup() {
   envelope = new p5.Envelope();
 
   // set attackTime, decayTime, sustainRatio, releaseTime
-  envelope.setADSR(0.001, 0.5, 0.1, 0.5);   
+  envelope.setADSR(0.001, 0.5, 0.1, 0.5);
+  
+
+	// Create (and hide) sliders  
+    for (i=1; i<sliderNums+1; i++) {
+      slider_pos = width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) + slider_x_offset;
+//      sliders[i] = createSlider(0,1,0,0); 
+      sliders[i] = createSlider(minSliderRange,0,minSliderRange,0); 
+//      sliders[i].size(225);
+      sliders[i].size(175);
+      sliders[i].style('transform', 'rotate(-90deg');
+        sliders[i].style('background-color', string_colors); 
+      sliders[i].input( updateSlider(i) );
+      sliders[i].position(slider_pos, slider_y_default);
+		sliders[i].hide();
+		
+		slider_amps[i] = 0.0;
+    }
+
+  	spectrum_slice = new Array(512).fill(0.0);
+     
 }
 
 
@@ -197,10 +220,17 @@ function draw() {
 //  var h = height/divisions; // unused
 
   // Update current spectrum array, since we're about to draw it
-  var spectrum = fft.analyze();
+  var spectrum = fft.analyze('dB');
 //  var newBuffer = [];   // unused
   
-  if (pause_fft == 0){ //will control drawing for pause function 
+  if (pause_fft == 0){ //will control drawing for pause function
+  
+/*	// If we want to plot the spectrum using linear amplitude (not dB)
+  	for (i=0; i<512; i++) {
+  		spectrum_slice[i] = Math.pow(10, spectrum[i]/20);
+  	} 
+  	spectra.unshift(spectrum_slice.slice(0,512)); */
+   
     // Insert just computed spectrum at the head (index 0) of the spectra array
     spectra.unshift(spectrum.slice(0,512));
     spectra.pop(); // Remove oldest (highest index) spectrum from the spectra array
@@ -315,7 +345,12 @@ function drawSpectra() {
       spectrumEdge = Math.pow(2,9-fftScale); // Goes from 512 > 256 > 128 > 64
 
       for (i = 0; i < spectrumEdge ; i++) {
-        curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 255, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+      	f = width * (i/512)
+      	// Plot in dB scale
+//        curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], -100, 0, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
+        curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], -100, 0, height-150+s*(150/numSpectrumFrames), 15+s*(150/numSpectrumFrames)));
+		// Plot in linear amplitude scale
+//        curveVertex(i*(width/512)*Math.pow(2,fftScale), map(spectra[s][i+scrollOffset], 0, 0.02, height-150+s*(150/numSpectrumFrames), 5+s*(150/numSpectrumFrames)));
     }
     endShape();
   }
@@ -350,7 +385,7 @@ function drawFrequencyLabels() {
 //  f_max = min(11000, 11025/Math.pow(2,fftScale) );
   f_max = 11000;
   
-  for (f=f_steps; f < f_max; f+= f_steps) {
+  for (f=f_steps; f <= f_max; f+= f_steps) {
     this_x = width * f / 11025 * Math.pow(2,fftScale) + textOffset;
     if ( (this_x >= 0) && (this_x < width) )  {
       line(this_x,0,this_x,350);
@@ -489,6 +524,7 @@ function toggleButton(idx) {
 
       curr_recorded_sound = idx; 
       pause_fft = 0; //ensure that the drawing is maintained
+      pause_wave = 0;
 
       fft.setInput(soundFile[idx]);
       soundFile[idx].onended( donePlaying(idx) );    
@@ -503,7 +539,8 @@ function toggleButton(idx) {
       buttonState[idx] = 2;
 
       fft.setInput(soundFile[idx]);
-      pause_fft = 1; 
+      pause_fft = 1;
+      pause_wave = 1; 
       waveScale = return_waveScale; //change waveScale variable back to what it was
       soundFile[idx].pause(); // play the result!   
     }
@@ -592,23 +629,17 @@ function synthesizer() {
      
     synthesis_button.style('background-color', '#4400ff');
 
+	// Sliders now created in setup()
+	// Show sliders and start corresponding oscillators
     for (i=1; i<sliderNums+1; i++) {
-//      slider_pos = (curr_f0*i)/11025 * width * (Math.pow(2,fftScale) + scrollOffset/512) + 113;  
+	// Hide the sliders that are outside of the frequency view range
       slider_pos = width * Math.pow(2,fftScale) * ((curr_f0*i)/11025 - scrollOffset/512) + slider_x_offset;
-  //    print(slider_pos); 
-      sliders[i] = createSlider(0,1,0,0); 
-      sliders[i].size(225);
-      sliders[i].style('transform', 'rotate(-90deg');
-      sliders[i].input( updateSlider(i) );
-      sliders[i].position(slider_pos, slider_y_default);
-
-  //      if (slider_pos<= windowWidth-200 || slider_pos >= windowWidth){
       if (slider_pos <= 0 || slider_pos > width){
-  //        sliders[i].style('background-color', 'transparent')
         sliders[i].hide();
       }
       else {
-        sliders[i].style('background-color', string_colors); 
+		sliders[i].show();
+//        sliders[i].style('background-color', string_colors); 
       }
       oscillators[i].start(); 
     }
@@ -737,16 +768,27 @@ function update_input_gain() {
 
 function update_output_gain() {
   output_slider_input.value( output_slider.value() );
+
   
   for (i=1; i<sliderNums+1; i++) {
-    oscillators[i].amp( sliders[i].value() * output_slider.value() * synthGainFudgeFactor );
+//    oscillators[i].amp( sliders[i].value() * output_slider.value() * synthGainFudgeFactor );
+    oscillators[i].amp( slider_amps[i] * output_slider.value() * synthGainFudgeFactor );
   }
 }
 
 
 function updateSlider(idx) {
   return function() {
-    oscillators[idx].amp( sliders[idx].value() * output_slider.value() * synthGainFudgeFactor );
+  
+  	if (sliders[idx].value() < minSliderRange + 1) {
+  		slider_amps[idx] = 0.0;
+  	}
+  	else {
+		slider_amps[idx] = Math.pow(10, sliders[idx].value()/20); // dB to linear amplitude
+	}
+	  
+//    oscillators[idx].amp( sliders[idx].value() * output_slider.value() * synthGainFudgeFactor );
+    oscillators[idx].amp( slider_amps[idx] * output_slider.value() * synthGainFudgeFactor );
 
     recomputeWave();
   }
@@ -797,13 +839,25 @@ function update_f0() {
 }
 
 function recomputeWave() {
+	// For speed: Now this computes only enough of the wave to draw on the screen
+	// ALSO: Does not apply envelope (just the synthesized wave)
+	
+	// Used to compute a full second (approximate, to the nearest full period) of synthesized wave,
+	// multiplied by the amplitude envelope (if set). But this was very SLOW.
+
   period = round(44100/curr_f0);
   round_f0 = round(44100/period);
   
-  synth_len = period * round_f0;
+	// Compute how many values we need (to exceed a full second)
+	//  synth_len = period * round_f0;
+
   if (synth_len < 44100) {
     synth_len += period;
   }
+
+	// For speed: instead let's just compute enough samples to draw the wave on screen
+	synth_len = 2*1024;	// 2x because minimum waveScale is 2x
+
   
   if (y_wave.length != synth_len) {
     y_wave = [];
@@ -816,10 +870,12 @@ function recomputeWave() {
     y_wave[i] = 0;
     for (s=1; s<=sliderNums; s++) {
       x = i/44100;
-      y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x); 
+//      y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x); 
+      y_wave[i] += slider_amps[s] * sin(TWO_PI * (round_f0 * s) * x); 
     }
     
-    ye_wave[i] = y_wave[i] * e_wave[i];
+//    ye_wave[i] = y_wave[i] * e_wave[i];
+    ye_wave[i] = y_wave[i];
   }
   ye_wave_idx = 0;
 }
@@ -834,7 +890,8 @@ function input_change(){
 function output_change() {
   output_slider.value( parseFloat(output_slider_input.value()) );
   for (i=1; i<sliderNums+1; i++) {
-    oscillators[i].amp( sliders[i].value() * output_slider.value() );
+//    oscillators[i].amp( sliders[i].value() * output_slider.value() );
+    oscillators[i].amp( slider_amps[i] * output_slider.value() );
   }    
 }
 
@@ -844,7 +901,9 @@ function updateWaveType(wave_type){
     for (i = 1; i <= sliderNums; i++){
       if (i != 1){
         oscillators[i].amp(0); 
-        sliders[i].value(0); 
+//        sliders[i].value(0); 
+        sliders[i].value(minSliderRange);
+        slider_amps[i] = 0.0;
       }
     }
   }
@@ -852,12 +911,16 @@ function updateWaveType(wave_type){
     for (i = 1; i <= sliderNums; i++){
       if (i%2 == 0){
         oscillators[i].amp(0); 
-        sliders[i].value(0);
+//        sliders[i].value(0); 
+        sliders[i].value(minSliderRange);
+        slider_amps[i] = 0.0;
       }
       else{
         var inverse_num = 1/i; 
         oscillators[i].amp(inverse_num * output_slider.value() * synthGainFudgeFactor); 
-        sliders[i].value(inverse_num);
+//        sliders[i].value(inverse_num); 
+        sliders[i].value(20 * Math.log10(inverse_num) );
+        slider_amps[i] = inverse_num;
       } 
     }
   }
@@ -865,8 +928,10 @@ function updateWaveType(wave_type){
     for (i = 1; i<= sliderNums; i++){
       var inverse_num = 1/i;
       oscillators[i].amp(inverse_num * output_slider.value() * synthGainFudgeFactor); 
-      sliders[i].value(inverse_num);  
-    }
+//      sliders[i].value(inverse_num);  
+		sliders[i].value(20 * Math.log10(inverse_num) );
+        slider_amps[i] = inverse_num;
+     }
   }
   recomputeWave(); 
 }
@@ -922,7 +987,7 @@ function wave_drawing(){
 }
 
 function envelope_drawing(){
-  envelope_mode = !envelope_mode; 
+//  envelope_mode = !envelope_mode; 
   //envelope_mode = true;
   
   if (wavedraw_mode){
@@ -931,13 +996,54 @@ function envelope_drawing(){
   }
 
   if (envelope_mode){
-    draw_envelope_button.style('background-color', '#4400ff');
+	envelope_mode = false; 
+    draw_envelope_button.style('background-color', '#ffffff');
+    
+    recomputeWave();
+    startOscillators(); 
 
-    stopOscillators();
   }
   else{
-    draw_envelope_button.style('background-color', '#ffffff');
-    startOscillators(); 
+  	envelope_mode = true;  
+    draw_envelope_button.style('background-color', '#4400ff');
+    stopOscillators();
+
+  // If needed, intialize y_wave, e_wave, and ye_wave
+
+//	if (synth_len < 44100) {
+		synth_len = 44100;	// One second
+		ye_wave = [];
+		ye_wave = new Float32Array(synth_len);
+
+/*		if (e_wave.length != synth_len) {
+			e_wave = [];
+			e_wave = new Float32Array(synth_len).fill(1.0);
+		}
+*/
+		y_wave = [];
+		y_wave = new Float32Array(synth_len).fill(0.0);
+		
+		for (i=0; i<synth_len; i++) {
+			for (s=1; s<=sliderNums; s++) {
+				x = i/44100;
+//				y_wave[i] += sliders[s].value() * sin(TWO_PI * (round_f0 * s) * x);	
+				y_wave[i] += slider_amps[s] * sin(TWO_PI * (round_f0 * s) * x);	
+			}
+	
+			ye_wave[i] = y_wave[i] * e_wave[i];
+		}
+
+		ye_wave_idx = 0;
+//	}  
+
+		// Just in case synth is playing (it really shouldn't be)
+		if (synth.isPlaying()) {
+			synth.stop();
+		}
+
+		synth = new p5.SoundFile();			
+		fft.setInput(synth);			
+		synth.setBuffer( [ye_wave] );
   }
 }
 
@@ -960,8 +1066,10 @@ function set_preset1(){
   if (preset1_bool == true){
     preset1_button.style('background-color', '#4400ff');
     for (i=1; i<sliderNums; i++){
-      sliders[i].value(preset1[i]); 
-      oscillators[i].amp(preset1[i] * output_slider.value() * synthGainFudgeFactor );
+      sliders[i].value(preset1[i]);
+      slider_amps[i] = Math.pow(10, preset1[i]/20);
+//      oscillators[i].amp(preset1[i] * output_slider.value() * synthGainFudgeFactor );
+      oscillators[i].amp(slider_amps[i] * output_slider.value() * synthGainFudgeFactor );
     }
     recomputeWave(); 
   }
@@ -975,8 +1083,10 @@ function set_preset2(){
   if (preset2_bool == true){
     preset2_button.style('background-color', '#4400ff');
     for (i=1; i<sliderNums; i++){
-      sliders[i].value(preset2[i]); 
-      oscillators[i].amp(preset2[i] * output_slider.value() * synthGainFudgeFactor );
+      sliders[i].value(preset2[i]);
+      sliders_amps[i] = Math.pow(10, preset2[i]/20);
+//      oscillators[i].amp(preset2[i] * output_slider.value() * synthGainFudgeFactor );
+      oscillators[i].amp(slider_amps[i] * output_slider.value() * synthGainFudgeFactor );
     }
     recomputeWave(); 
   }
