@@ -335,19 +335,12 @@ var o_sketch = function(p) {
 			synth = new p5.SoundFile();			
 			fft.setInput(synth);			
 			synth.setBuffer( [y_wave] );
-			synth.setLoop(true);
-		
-	//		envelope.setLoop(true);
-	//		envelope.play();
-
-	//		synth.setVolume(envelope);
-	//		envelope.setLoop(true);
-
-	//		envelope.play(synth, 0); //, 0.1);
+			synth.setLoop(true);		
 			synth.play();  
 		}
 		
-		waveform_bool = false;	
+		waveform_bool = false;
+		compute_slider_weights = 11;	 // Kind of hacky... Will trigger after this number of spectrum frames to compute slider weights
 	}
 	
 

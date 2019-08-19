@@ -81,6 +81,8 @@ var waveform_bool = false; //^^^
 var envelope_bool = false; //^^^
 var wavedraw_mode = false; //check for if the ability to draw a waveform is available
 var envelope_mode = false; //check for if the ability to draw an envelope is available
+var compute_slider_weights = false;
+
 var s = false;
 //let slider_x_offset = 88;   // offset needed for slider position when rotating -90deg (to vertical)
 let slider_x_offset = 112;   // offset needed for slider position when rotating -90deg (to vertical)
@@ -241,13 +243,21 @@ function draw() {
   drawFrequencyLabels();
   zoom_buttons(); 
 
-/*  if (pause_fft == 1 && synthesis_bool == false){
-    speed = 0;
-    zoom_buttons(); 
-  } 
-  else{
-    speed = 1; 
-  } */
+	if (wavedraw_mode) {
+		if (compute_slider_weights == 1) {			
+			for (s=1; s<=sliderNums; s++) {
+				this_f = curr_f0 * s;
+				this_idx = round(this_f * 512 / 11025);
+				this_dB = spectrum[this_idx];
+				sliders[s].value(this_dB);
+				slider_amps[s] = Math.pow(10, this_dB/20);
+			}  
+			compute_slider_weights = 0;
+		}
+		else {
+			compute_slider_weights--;
+		}	
+	}
   
 /*    if (dot) {
       fill(20);
