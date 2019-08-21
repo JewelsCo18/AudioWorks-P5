@@ -17,3 +17,4 @@ Link to live version: https://drexeltranscend.org/projects/AudioWorks-P5/
 - in waveform/envelope mode, envelope sound keeps playing not waveform 
 - sliders and waveform are slow
 - updating and repositioning sliders are slow
+- examples are buggy
