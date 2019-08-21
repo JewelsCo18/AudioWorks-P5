@@ -98,8 +98,8 @@ var return_waveScale; //to keep track of the waveScale to continue having previo
 var synth_len = 44100; // One second, initially
 var preset1 = []; //will adjust sliders/oscillators when pressed and store values of sliders when bool is false
 var preset2 = []; //^^^
-var empty_preset1 = 0; 
-var empty_preset2 = 0;
+var empty_preset1 = 0; //to check if there's anything in the preset other than null. If so then empty_preset > 0
+var empty_preset2 = 0; //^^ same for preset2
 var preset1_bool = false; 
 var preset2_bool = false; 
 var sliders_shown_bool = true; 
@@ -127,6 +127,13 @@ var black_keys = [];
 //Examples
 var example_bool = false; 
 var particle_bool = false; 
+var amplitude_bool = false; 
+var circle_bool = false; 
+var prevLevels = new Array(60); // Array used for amplitude example
+var amplitude; // P5 amplitude 
+// var alphaValue; 
+var centerClip = 0; // center for the circle 
+var bNormalize = true; //stabilizer for the circle
 
 //Global Setup for Bottom FFT (Landscape Frequency)
 function setup() {
@@ -175,7 +182,7 @@ function setup() {
     oscillators[i].amp(0);
   }
 
-  //initializing presets
+  //initializing presets with null in every position
   for (i=1; i<sliderNums+1; i++) {
         preset1.push(null);
         preset2.push(null); 
@@ -226,7 +233,7 @@ function draw() {
   //variable to pinpoint correct heights of sound
 //  var h = height/divisions; // unused
 
-  // Update current spectrum array, since we're about to draw it
+  // Update current spectrum array, since we're about to draw it in decibels 
   var spectrum = fft.analyze('dB');
 //  var newBuffer = [];   // unused
   
@@ -270,6 +277,7 @@ function draw() {
       circle(dot_x, map(spectra[0][idx], 0, 255, height-150, 5), 20);
   } */
 
+  // if the user hasn't saved a preset then push all the slider values into each preset position 
   if (empty_preset1 == 0 && preset1_bool == false){
       for (i=1; i<sliderNums+1; i++) {
         preset1[i] = sliders[i].value(); 
@@ -722,6 +730,7 @@ function synthesizer() {
   }
 }
 
+//for if a recorded sound is going to be analysed in the synthesizer 
 function synthesis_positions(){
     keyboard_button.position(header_x + 10, last_button + recording_adjustment);
     slider_button.position(header_x + 70, last_button + recording_adjustment); 
@@ -992,6 +1001,12 @@ function windowResized() {
     repositionSliders(); 
   }
 
+  if (example_bool == true){
+    if (circle_bool == true){
+      offset_move_x = windowWidth/2;
+    }
+  }
+
   resizeCanvas(windowWidth - sidebarWidth, 400); 
   //cnv.position(sidebarWidth, 300); 
   fft_b_zoom_in.position(windowWidth - rightMargin, 300 + topMargin); 
@@ -1001,6 +1016,7 @@ function windowResized() {
   //o_p5.position(200,0); 
   o_p5.o_zoom_in.position(windowWidth - o_p5.rightMargin,20); 
   o_p5.o_zoom_out.position(windowWidth - o_p5.rightMargin - (o_p5.maxScale*o_p5.buttonSpacing) - (zoomButtonSize+o_p5.buttonSpacing),20); 
+
 
 }
 
